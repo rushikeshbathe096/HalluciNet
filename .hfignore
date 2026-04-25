@@ -1,0 +1,10 @@
+env/
+__pycache__/
+*.pyc
+*.pyo
+.git/
+hallucinet_adversarial/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
