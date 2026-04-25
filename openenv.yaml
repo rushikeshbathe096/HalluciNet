@@ -1,0 +1,80 @@
+spec_version: 1
+name: hallucinet_adversarial
+version: "2.0.0"
+description: >
+  Adversarial self-improving hallucination detection.
+  Generator agent creates subtle hallucinations.
+  Detector agent learns to catch them.
+  Adaptive curriculum escalates difficulty as both agents improve.
+  Theme 1: Multi-Agent | Theme 4: Self-Improvement
+
+author: "team-tle"
+
+tags:
+  - openenv
+  - hallucination
+  - multi-agent
+  - self-improvement
+  - adversarial
+  - llm-safety
+  - real-world
+
+runtime: fastapi
+app: server.app:app
+port: 7860
+
+tasks:
+  - id: easy
+    description: "Detector task. 8 samples. Obvious hallucinations. 2 clean samples."
+    difficulty: easy
+    max_steps: 10
+
+  - id: medium
+    description: "Detector task. 10 samples. Mixed errors. 2 clean samples."
+    difficulty: medium
+    max_steps: 12
+
+  - id: hard
+    description: "Detector task. 15 samples. Adversarial traps, negation, entity confusion."
+    difficulty: hard
+    max_steps: 15
+
+  - id: expert
+    description: "Detector task. 20 samples. Multi-hop reasoning, date arithmetic, adversarial clean."
+    difficulty: expert
+    max_steps: 22
+
+action_space:
+  type: object
+  description: "Detector action space (primary). Generator has separate endpoints."
+  properties:
+    has_hallucination:
+      type: boolean
+    hallucinated_claim:
+      type: string
+      nullable: true
+    correct_fact:
+      type: string
+      nullable: true
+    confidence:
+      type: number
+      exclusiveMinimum: 0.0
+      exclusiveMaximum: 1.0
+
+observation_space:
+  type: object
+  properties:
+    reference_document:
+      type: string
+    llm_response:
+      type: string
+    feedback:
+      type: string
+    score:
+      type: number
+    reward:
+      type: number
+    done:
+      type: boolean
+
+entrypoint: "uvicorn server.app:app --host 0.0.0.0 --port 7860"

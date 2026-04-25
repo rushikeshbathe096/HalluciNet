@@ -1,0 +1,7 @@
+session,task,gen_reward,det_reward,combined,curriculum_decision
+1,easy,0.34,0.6796,0.5098,stay
+2,easy,0.3376,0.484,0.4108,stay
+3,easy,0.3274,0.486,0.4067,promote
+4,medium,0.3362,0.49,0.4131,stay
+5,medium,0.3256,0.54,0.4328,stay
+6,medium,0.3276,0.6698,0.4987,promote
