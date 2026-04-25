@@ -23,6 +23,20 @@ from typing import List, Optional
 from dotenv import load_dotenv
 from openai import OpenAI
 
+
+import time
+
+def call_with_retry(fn, retries=3, delay=2):
+    """Call fn with retry logic. Returns None on all failures."""
+    for attempt in range(retries):
+        try:
+            return fn()
+        except Exception as e:
+            print(f"[RETRY] attempt={attempt+1}/{retries} error={e}", flush=True)
+            if attempt < retries - 1:
+                time.sleep(delay)
+    return None
+
 from adversarial_coordinator import run_adversarial_session
 from curriculum import AdversarialCurriculumManager
 
@@ -66,7 +80,8 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
 
 def main() -> None:
     if not GROQ_API_KEY:
-        raise RuntimeError("GROQ_API_KEY is required. Set it before running inference.py")
+        print("[WARNING] GROQ_API_KEY not set. Inference will fail on API calls.", flush=True)
+        print("[INFO] Set GROQ_API_KEY in your .env file or environment.", flush=True)
 
     client = OpenAI(base_url=API_BASE_URL, api_key=GROQ_API_KEY)
     curriculum = AdversarialCurriculumManager()

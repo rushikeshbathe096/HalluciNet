@@ -1064,6 +1064,106 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
             "hint": "The LLM confused the one-way nature of hashing with two-way symmetric encryption."
         }
     ],  # end "expert"
+
+    "adversarial": [
+        {
+            "reference_document": "The Treaty of Westphalia (1648) ended the Thirty Years War and established the principle of state sovereignty. The Peace of Utrecht (1713) ended the War of Spanish Succession. The Congress of Vienna (1815) restructured Europe after the Napoleonic Wars. Each treaty involved different belligerents and resolved different conflicts.",
+            "llm_response": "The Congress of Vienna in 1815 was the culmination of the treaty system that began at Westphalia in 1648, with the Peace of Utrecht serving as the midpoint, collectively establishing the modern European state system across 167 years of continuous diplomatic evolution.",
+            "ground_truth_has_hallucination": True,
+            "ground_truth_hallucinated_phrases": ["167 years of continuous diplomatic evolution", "culmination of the treaty system"],
+            "ground_truth_corrections": ["The treaties resolved separate conflicts and were not a continuous system. 1815-1648=167 years is arithmetically correct but the framing of continuity is false."],
+            "hint": "The arithmetic is correct (167 years) but the causal chain implied is fabricated. Multi-hop trap: correct numbers, false narrative."
+        },
+        {
+            "reference_document": "Compound interest formula: A = P(1 + r/n)^(nt). For P=$1000, r=5% annual, n=12 (monthly), t=10 years: A = 1000(1 + 0.05/12)^(120) = $1647.01. Simple interest over same period: A = P(1 + rt) = 1000(1 + 0.5) = $1500.",
+            "llm_response": "Over 10 years at 5% annual interest, compound monthly interest yields $1647.01 versus $1500 for simple interest, meaning compounding generates an additional $147.01 in returns — a 9.8% improvement over simple interest.",
+            "ground_truth_has_hallucination": True,
+            "ground_truth_hallucinated_phrases": ["9.8% improvement over simple interest"],
+            "ground_truth_corrections": ["147.01/1500 = 9.8% is arithmetically correct as percentage of simple interest total, but the framing misrepresents what the percentage means — it should be 14.7% improvement over the principal."],
+            "hint": "All numbers are correct but the denominator chosen for the percentage creates a misleading comparison. Classic financial hallucination trap."
+        },
+        {
+            "reference_document": "The human brain contains approximately 86 billion neurons. Each neuron forms on average 7,000 synaptic connections. This gives approximately 600 trillion synapses total. The brain operates on roughly 20 watts of power — less than a standard light bulb.",
+            "llm_response": "With 86 billion neurons each forming 7,000 connections, the human brain achieves roughly 600 trillion synapses while consuming only 20 watts — making it approximately 100,000 times more energy-efficient than modern supercomputers performing equivalent operations.",
+            "ground_truth_has_hallucination": True,
+            "ground_truth_hallucinated_phrases": ["100,000 times more energy-efficient than modern supercomputers"],
+            "ground_truth_corrections": ["The reference document does not make any comparison to supercomputers. This figure is fabricated and not supported by the reference."],
+            "hint": "All reference-derived facts are correct. The hallucination is an unsupported comparative claim added beyond the reference scope."
+        },
+        {
+            "reference_document": "Aspirin (acetylsalicylic acid) inhibits COX-1 and COX-2 enzymes, reducing prostaglandin synthesis. At low doses (75-100mg), it irreversibly inhibits platelet COX-1, providing antiplatelet effects for the platelet's lifetime (7-10 days). At higher doses (325-650mg), it provides anti-inflammatory and analgesic effects.",
+            "llm_response": "Aspirin's dual mechanism makes it uniquely versatile: at cardiac doses of 75-100mg it permanently disables platelet clotting function for up to 10 days, while standard doses of 325-650mg address pain and inflammation through the same COX inhibition pathway.",
+            "ground_truth_has_hallucination": False,
+            "ground_truth_hallucinated_phrases": [],
+            "ground_truth_corrections": [],
+            "hint": "Adversarial clean. 'Permanently disables' sounds alarming but accurately describes irreversible COX-1 inhibition lasting the platelet lifetime. 'Up to 10 days' matches reference. Detector must resist false alarm."
+        },
+        {
+            "reference_document": "The Coriolis effect causes moving air masses to deflect to the right in the Northern Hemisphere and to the left in the Southern Hemisphere. This is due to Earth's rotation. Hurricanes rotate counterclockwise in the Northern Hemisphere and clockwise in the Southern Hemisphere as a result.",
+            "llm_response": "Due to the Coriolis effect, tropical cyclones spin counterclockwise north of the equator and clockwise south of it — the same principle that causes water to drain in opposite directions in each hemisphere.",
+            "ground_truth_has_hallucination": True,
+            "ground_truth_hallucinated_phrases": ["causes water to drain in opposite directions in each hemisphere"],
+            "ground_truth_corrections": ["The Coriolis effect does not meaningfully affect water draining in sinks or toilets — this is a common myth. The reference document does not support this claim."],
+            "hint": "The hurricane facts are correct. The hallucination is an appended common myth about draining water, not supported by the reference."
+        },
+        {
+            "reference_document": "Photosynthesis equation: 6CO2 + 6H2O + light energy → C6H12O6 + 6O2. Plants absorb CO2 through stomata and water through roots. The light-dependent reactions occur in the thylakoid membranes. The Calvin cycle (light-independent reactions) occurs in the stroma of chloroplasts.",
+            "llm_response": "During photosynthesis, plants convert six molecules of carbon dioxide and six of water into one glucose molecule and six oxygen molecules, with light-dependent reactions in the thylakoid and the Calvin cycle in the stroma — releasing the oxygen that constitutes 21% of Earth's atmosphere.",
+            "ground_truth_has_hallucination": True,
+            "ground_truth_hallucinated_phrases": ["constitutes 21% of Earth's atmosphere"],
+            "ground_truth_corrections": ["While atmospherically true, the reference document does not state that photosynthesis produced current atmospheric oxygen levels. This is an unsupported addition beyond the reference scope."],
+            "hint": "21% atmospheric oxygen is factually true globally but not supported by the reference document. Tests whether detector can distinguish reference-grounded truth from general knowledge additions."
+        },
+        {
+            "reference_document": "The Black Death (1347-1351) killed an estimated 30-60% of Europe's population. Recovery took approximately 150-200 years. The plague was caused by Yersinia pestis bacteria, transmitted primarily by fleas on rats. It arrived in Europe via Genoese trading ships from Crimea.",
+            "llm_response": "The Black Death devastated medieval Europe between 1347 and 1351, eliminating between 30-60% of the population through Yersinia pestis spread by rat fleas aboard Genoese ships from Crimea — a demographic catastrophe from which Europe required nearly two centuries to recover.",
+            "ground_truth_has_hallucination": False,
+            "ground_truth_hallucinated_phrases": [],
+            "ground_truth_corrections": [],
+            "hint": "Adversarial clean. Every claim maps directly to the reference. 'Nearly two centuries' correctly paraphrases 150-200 years. 'Demographic catastrophe' is editorial but not factually wrong. Detector must not flag paraphrasing as hallucination."
+        },
+        {
+            "reference_document": "Newton's Third Law: For every action, there is an equal and opposite reaction. When a gun fires, the bullet moves forward and the gun recoils backward. The forces are equal in magnitude but opposite in direction. However, the accelerations differ because the masses differ (F=ma).",
+            "llm_response": "Newton's Third Law explains gun recoil: the forward force on the bullet equals the backward force on the gun. Since the gun is far heavier than the bullet, it accelerates much less, which is why a 10g bullet at 900 m/s produces manageable recoil in a 1kg pistol.",
+            "ground_truth_has_hallucination": True,
+            "ground_truth_hallucinated_phrases": ["10g bullet at 900 m/s", "1kg pistol"],
+            "ground_truth_corrections": ["The reference document provides no specific values for bullet mass, velocity, or gun weight. These figures are fabricated specifics not grounded in the reference."],
+            "hint": "The physics explanation is correct. The hallucination is the introduction of specific numbers not present in the reference — a common LLM hallucination pattern."
+        },
+        {
+            "reference_document": "The Turing Test, proposed by Alan Turing in 1950 in his paper 'Computing Machinery and Intelligence', evaluates machine intelligence through a blind conversation between a human judge and either a machine or human. If the judge cannot reliably distinguish the machine from the human, the machine is said to pass the test.",
+            "llm_response": "Alan Turing's 1950 imitation game, now called the Turing Test, set a benchmark that no machine fully passed until 2014, when the chatbot Eugene Goostman convinced 33% of judges it was human at the Royal Society in London.",
+            "ground_truth_has_hallucination": True,
+            "ground_truth_hallucinated_phrases": ["no machine fully passed until 2014", "Eugene Goostman convinced 33% of judges"],
+            "ground_truth_corrections": ["The reference document describes the Turing Test but makes no claims about when or whether it was passed. The 2014 Eugene Goostman claim is disputed and not in the reference."],
+            "hint": "Multi-hop hallucination: historically controversial claim appended to correct reference content. Tests whether detector catches additions beyond reference scope."
+        },
+        {
+            "reference_document": "Solar panels convert sunlight into electricity through the photovoltaic effect. Silicon-based panels have efficiencies of 15-22% for commercial panels and up to 29% for laboratory cells. A typical residential installation of 6kW generates approximately 7,000-10,000 kWh annually depending on location and sunlight hours.",
+            "llm_response": "Silicon solar panels achieve 15-22% commercial efficiency and up to 29% in laboratory conditions. A standard 6kW residential system generates 7,000-10,000 kWh per year — enough to power an average American home, which consumes approximately 10,500 kWh annually.",
+            "ground_truth_has_hallucination": True,
+            "ground_truth_hallucinated_phrases": ["enough to power an average American home", "approximately 10,500 kWh annually"],
+            "ground_truth_corrections": ["The reference does not state that a 6kW system powers an average American home. The 10,500 kWh figure is not in the reference document."],
+            "hint": "Reference facts are perfectly reproduced. Hallucination is a reasonable-sounding inference with a specific number added beyond the reference scope."
+        },
+        {
+            "reference_document": "The placebo effect occurs when patients experience real improvements in symptoms after receiving an inactive treatment, believing it to be active. Studies show placebo response rates of 30-40% in pain trials. The effect involves both psychological expectation and measurable physiological changes including endorphin release.",
+            "llm_response": "The placebo effect produces genuine symptom relief in 30-40% of pain trial participants through a combination of psychological expectation and real physiological responses including endorphin release — demonstrating that the mind-body connection can generate measurable healing equivalent to mild analgesics.",
+            "ground_truth_has_hallucination": True,
+            "ground_truth_hallucinated_phrases": ["equivalent to mild analgesics"],
+            "ground_truth_corrections": ["The reference does not compare placebo effects to mild analgesics. This equivalence claim is not supported by the reference document."],
+            "hint": "All reference content is accurately reproduced. The hallucination is a comparative conclusion drawn beyond what the reference supports."
+        },
+        {
+            "reference_document": "Quantum entanglement occurs when two particles become correlated such that the quantum state of each cannot be described independently. Measuring one particle instantly affects the correlated partner regardless of distance. Einstein called this 'spooky action at a distance' and disputed it could be used for faster-than-light communication, which remains impossible as measuring entangled particles cannot transmit information.",
+            "llm_response": "Quantum entanglement creates instantaneous correlations between particles across any distance — a phenomenon Einstein dismissed as 'spooky action at a distance.' While measurement of one particle instantly affects its partner, this cannot be exploited for faster-than-light communication, as the outcomes are random and no information is transmitted.",
+            "ground_truth_has_hallucination": False,
+            "ground_truth_hallucinated_phrases": [],
+            "ground_truth_corrections": [],
+            "hint": "Adversarial clean. 'Dismissed' accurately reflects Einstein's skepticism. 'Outcomes are random' correctly explains why FTL communication is impossible. All claims reference-grounded. High false-positive risk for naive detectors."
+        },
+    ],
+
 }
 
 

@@ -8,7 +8,7 @@ Theme 4: Self-Improvement
 Theme 1: Multi-Agent (both agents improve together)
 """
 
-TASK_ORDER = ["easy", "medium", "hard", "expert"]
+TASK_ORDER = ["easy", "medium", "hard", "expert", "adversarial"]
 PROMOTION_THRESHOLD = 0.75  # detector must catch at this rate to advance
 DEMOTION_THRESHOLD = 0.40   # detector below this rate triggers demotion
 STAGNATION_ROUNDS = 5  # advance if no improvement after this many rounds
@@ -37,6 +37,7 @@ class AdversarialCurriculumManager:
         self.promotions = 0
         self.demotions = 0
         self.session_log = []
+        self.last_demotion_level = -1  # oscillation guard
 
     @property
     def current_task(self) -> str:
@@ -65,6 +66,7 @@ class AdversarialCurriculumManager:
             window_full
             and det_avg >= PROMOTION_THRESHOLD
             and self.current_level < len(TASK_ORDER) - 1
+            and self.current_level != self.last_demotion_level
         ):
             self.current_level += 1
             self.promotions += 1
@@ -98,6 +100,7 @@ class AdversarialCurriculumManager:
             and det_avg < DEMOTION_THRESHOLD
             and self.current_level > 0
         ):
+            self.last_demotion_level = self.current_level
             self.current_level -= 1
             self.demotions += 1
             decision = "demote"
