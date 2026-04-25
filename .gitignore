@@ -1,43 +1,9 @@
-# Python
+venv/
 __pycache__/
 *.pyc
 *.pyo
-*.pyd
-
-# Virtual environment
-venv/
-.env/
-
-# Environment variables
 .env
-
-# Logs
-*.log
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# VS Code / IDE
-.vscode/
-.idea/
-
-# Temporary files
-*.tmp
-*.swp
-
-# Docker (optional)
-*.tar
-
-# Jupyter (if any)
-.ipynb_checkpoints/.env
-.env
-.env
-
-benchmark_results.csvenv/
-*.lock
-env/
-venv/
-.venv/
-__pycache__/
-*.pyc
+*.egg-info/
+dist/
+build/
+.pytest_cache/

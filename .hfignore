@@ -1,10 +1,9 @@
-env/
+venv/
 __pycache__/
 *.pyc
 *.pyo
+.env
 .git/
 hallucinet_adversarial/
 *.egg-info/
-dist/
-build/
-.pytest_cache/
+uv.lock
