@@ -19,8 +19,8 @@ pinned: false
 
 | Resource | Link |
 |----------|------|
-| 🤗 HF Space (Live Demo) | https://shreyshringare-hallucinet.hf.space |
-| 💻 GitHub | https://github.com/shreyshringare/hallucinet_round2 |
+| 🤗 HF Space (Live Demo) | https://rushikeshbathe096-hallucinet.hf.space |
+| 💻 GitHub | https://github.com/rushikeshbathe096/HalluciNet_round2 |
 | 📓 Colab Training Notebook | [INSERT COLAB LINK] |
 | 📝 Blog Post | [blog.md](./blog.md) |
 | 🎥 YouTube Video | [INSERT YOUTUBE LINK] |
@@ -120,20 +120,20 @@ Recursive skill amplification — Theme 4
 
 ```bash
 # Health check
-curl https://shreyshringare-hallucinet.hf.space/health
+curl https://rushikeshbathe096-hallucinet.hf.space/health
 
 # Run detector episode
-curl -X POST https://shreyshringare-hallucinet.hf.space/reset \
+curl -X POST https://rushikeshbathe096-hallucinet.hf.space/reset \
   -H "Content-Type: application/json" \
   -d '{"task_id": "hard"}'
 
 # Run generator episode
-curl -X POST https://shreyshringare-hallucinet.hf.space/generator/reset \
+curl -X POST https://rushikeshbathe096-hallucinet.hf.space/generator/reset \
   -H "Content-Type: application/json" \
   -d '{"task_id": "easy"}'
 
 # Local setup
-git clone https://github.com/shreyshringare/hallucinet_round2
+git clone https://github.com/rushikeshbathe096/HalluciNet_round2
 cd hallucinet_round2
 pip install -r requirements.txt
 uvicorn server.app:app --host 0.0.0.0 --port 7860
