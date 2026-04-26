@@ -1,150 +1,187 @@
-# HalluciNet: Training LLMs to Know the Limits of Their Own Knowledge
+# HalluciNet Adversarial: Building a Detector That Knows When It Might Be Wrong
 
-## The Problem
+Hallucinations are not just wrong answers; they are often **confident wrong answers**.  
+HalluciNet Adversarial is built around that core failure mode.
 
-LLMs hallucinate. They generate confident, fluent, completely wrong statements.
-This is the #1 unsolved problem in production AI deployment.
+Instead of a single static benchmark, we run a two-agent loop:
 
-Incorrect confident outputs are more dangerous than uncertain ones —
-a user cannot tell the difference. For a model serving 100 million users,
-even a 3% hallucination rate means 3 million wrong confident answers per day.
+1. a **Generator** that tries to craft subtle factual errors,
+2. a **Detector** that must catch them and report calibrated confidence.
 
-No reinforcement learning environment existed to train agents to detect this.
-We built the first one: HalluciNet Adversarial.
+That pressure creates a harder and more realistic training/evaluation regime than one-pass QA checks.
 
-## The Two-Agent System
+---
 
-### Generator Agent
-Receives a reference document. Creates a subtle hallucination designed
-to fool the detector. Rewarded when the detector misses it.
-Learns to create progressively harder hallucinations.
+## Why this environment exists
 
-### Detector Agent
-Receives reference + generated response. Must detect the hallucination.
-Rewarded by a 4-dimension deterministic grader.
-Learns to catch progressively subtler errors.
+Most hallucination setups optimize detection accuracy only.  
+In production, confidence quality matters just as much:
 
-### Adversarial Self-Play Loop
+- a wrong answer with **high confidence** is dangerous,
+- a wrong answer with **low confidence** is recoverable via fallback/human review.
 
-```
-Generator creates hallucination
-          ↕
-Detector tries to catch it
-          ↕
-Both get rewards based on outcome
-          ↕
-Curriculum escalates difficulty when both improve
-          ↕
-Recursive skill amplification — Theme 4
-```
+HalluciNet rewards both correctness and calibration, so the model learns not only *what* is wrong, but also *when it is uncertain*.
 
-## The Unique Feature: Confidence Calibration
+---
 
-Most hallucination benchmarks only measure detection accuracy.
-HalluciNet also rewards calibrated uncertainty:
+## System architecture
 
-| Outcome | Reward |
-|---------|--------|
-| Correct + High Confidence | +bonus |
-| Correct + Low Confidence | base reward |
-| Wrong + Low Confidence | small penalty |
-| Wrong + High Confidence | severe penalty |
+## 1) Detector environment
 
-This trains agents to know when they are uncertain —
-critical for production AI safety.
+The detector receives:
+- `reference_document`
+- `llm_response`
 
-An overconfident wrong answer triggers no human review.
-An uncertain wrong answer does.
+It submits:
+- `has_hallucination`
+- `hallucinated_claim`
+- `correct_fact`
+- `confidence`
 
-**We are not training models to detect hallucinations.
-We are training models to know the limits of their own knowledge.**
+Scoring comes from a deterministic grader (`grader.py`):
 
-## Four Difficulty Levels
+| Component | Weight |
+|---|---:|
+| Detection correctness | 0.50 |
+| Phrase grounding | 0.30 |
+| Correct fact | 0.20 |
+| Confidence calibration | ±0.10 |
 
-| Task | Samples | Design |
-|------|---------|--------|
-| easy | 8 | Obvious errors — wrong year, name, city |
-| medium | 10 | Mixed errors — digit swaps, attribution |
-| hard | 15 | Negation traps, entity confusion, adversarial clean |
-| expert | 20 | Multi-hop reasoning, date arithmetic, numeric traps |
+## 2) Generator environment
 
-### Adversarial Clean Samples
+The generator attempts subtle edits (year/name/number/negation/entity-style errors) and is rewarded when the detector misses.
 
-The hard and expert tasks include counter-intuitive true facts
-designed to trigger false positives:
+## 3) Curriculum manager
 
-- **Venus rotation** — "Venus day is longer than Venus year" sounds wrong but is true
-- **Radioactive bananas** — sounds alarming but every figure is correct
-- **Oxford vs Aztecs** — Oxford University predates the Aztec Empire by centuries
+Difficulty is adapted over rolling windows:
+- promote when strong sustained performance appears,
+- demote when detector catch rate drops below threshold.
 
-A naive detector flags these. Our trained agent learns to verify before flagging.
+This keeps training pressure near capability boundaries.
 
-## Adaptive Curriculum — Theme 4: Self-Improvement
+---
 
-HalluciNet implements adaptive curricula:
+## Current task inventory
 
-- Agent starts on easy tasks
-- Advances when detector catch rate consistently above 0.75 over 3 sessions
-- Drops back when below 0.40
-- Generator and detector push each other to their capability frontier permanently
+The local codebase currently uses **5 tasks**:
 
-This is recursive skill amplification — exactly Theme 4.
+| Task | Samples | Max Steps |
+|---|---:|---:|
+| easy | 10 | 10 |
+| medium | 12 | 12 |
+| hard | 19 | 20 |
+| expert | 20 | 22 |
+| adversarial | 12 | 12 |
 
-## Grader Design
+The OpenEnv manifest (`openenv.yaml`) is aligned with these counts and includes the adversarial task.
 
-| Component | Weight | Description |
-|-----------|--------|-------------|
-| Hallucination detection | 0.50 | Did the agent correctly identify existence? |
-| Phrase identification | 0.30 | Did it quote the exact wrong phrase? |
-| Correct fact | 0.20 | Did it provide the right correction? |
-| Confidence calibration | ±0.10 | Was it appropriately certain? |
+---
 
-## Exploit Resistance
+## What was added in this iteration
 
-| Strategy | Score |
-|----------|-------|
-| Always-True agent | 0.300 |
-| Always-False agent | 0.250 |
-| Random agent | 0.573 |
-| Correct calibrated agent | 0.999 |
+### 1) ELO system
 
-No shortcut scores above 0.58.
-Only genuine correct detection with calibrated confidence scores above 0.90.
+`server/elo.py` introduced `ELOTracker`:
+- updates after each detector step,
+- tracks detector vs generator rating trajectory,
+- exposed via:
+  - `GET /elo/standings`
+  - `GET /elo/history`
 
-## Real Adversarial Results
+### 2) Calibration tracker + ECE-style metric
 
-6 sessions with llama-3.1-8b-instant via Groq:
+`server/calibration.py` stores `(confidence, correctness)` and reports:
+- per-bin confidence/accuracy,
+- calibration gap,
+- aggregate calibration error,
+- qualitative interpretation.
 
-| Session | Task | Det Rate | Gen Rate | Decision |
-|---------|------|----------|----------|----------|
-| 1 | easy | 0.80 | 0.20 | stay |
-| 2 | easy | 0.80 | 0.20 | stay |
-| 3 | easy | 0.80 | 0.20 | promote → medium |
-| 4 | medium | 0.80 | 0.20 | stay |
-| 5 | medium | 0.80 | 0.20 | stay |
-| 6 | medium | 0.80 | 0.20 | promote → hard |
+Exposed via `GET /calibration`.
 
-Curriculum promotions: 2 (easy → medium → hard)
-Detector wins 4/5 rounds consistently — environment provides genuine learning signal.
+### 3) Dynamic leaderboard persistence
 
-## Training
+`server/leaderboard.py` persists model scores in `leaderboard.json`:
+- no static hardcoded table in API response,
+- supports incremental recording via `POST /leaderboard/record`.
 
-We trained Qwen2.5-3B using GRPO with HuggingFace TRL and Unsloth.
+### 4) Oversight became actionable
 
-Stack:
-- Model: Qwen2.5-3B-Instruct (4-bit QLoRA)
-- Trainer: GRPO via HuggingFace TRL
-- Efficiency: Unsloth
-- Environment: HalluciNet Adversarial on HF Spaces
+`server/oversight_agent.py` now has `should_inject_adversarial()`:
+- if last 3 episodes are overconfident wrong,
+- next `/reset` can force `task_id="adversarial"`.
 
-Training notebook: [INSERT COLAB LINK]
+This turns oversight into a control mechanism, not only a monitor.
 
-## Links
+### 5) Debate endpoint compatibility
 
-- **HF Space**: https://shreyshringare-hallucinet.hf.space
-- **GitHub**: https://github.com/shreyshringare/hallucinet_round2
-- **Colab Training**: [INSERT COLAB LINK]
-- **Round 1**: https://rushikeshbathe096-hallucination-detector.hf.space
+`/debate` now returns `debate_round: true`, and validator payloads were adjusted to send a real `generator_defense`.
 
-Built by Team TLE for Meta PyTorch OpenEnv Hackathon × Scaler 2026.
-Abeer Nikhil Sane | Shreyas Shringare | Rushikesh Bathe | SPIT Mumbai
+---
+
+## The real proof: GRPO training
+
+Everything above is infrastructure. The question is: **does it actually produce a better model?**
+
+We trained `Qwen2.5-3B-Instruct` using GRPO (the technique behind DeepSeek-R1) with HalluciNet's deterministic grader as the reward function:
+
+- **Method:** `trl.GRPOTrainer` + LoRA (4-bit QLoRA on T4 GPU)
+- **Reward:** `grader.py` — same multi-signal scorer used in the environment
+- **Curriculum:** adaptive difficulty during training (easy → medium → hard)
+- **Notebook:** [Open in Colab](https://colab.research.google.com/drive/1vrqo8CFXBYJi3lHaFJWVQSPgcw9B34rz?usp=sharing)
+
+### Results
+
+| Task | Base Qwen2.5-3B | GRPO-Trained | Improvement |
+|---|---:|---:|---:|
+| Easy | 0.454 | **0.647** | **+42%** |
+| Medium | 0.375 | **0.774** | **+106%** |
+| Hard | — | **0.729** | **New capability** |
+
+The trained 3B model approaches the zero-shot performance of `llama-3.1-8b-instant` (8B) — a model **2.7× larger**.
+
+This is the core argument: the environment's reward signal is rich enough to drive genuine skill acquisition through RL, not just prompt engineering.
+
+---
+
+## API surface (high-level)
+
+- Detector/generator control: `/reset`, `/step`, `/generator/reset`, `/generator/step`
+- Evaluation and governance: `/debate`, `/oversight`, `/curriculum/status`, `/stats`
+- Model analytics: `/leaderboard`, `/calibration`, `/elo/standings`, `/elo/history`
+- Metadata compatibility: `/metadata`, `/schema`, `/mcp`
+- UX: `/`, `/demo`
+
+---
+
+## Engineering notes
+
+Strengths:
+- deterministic grader doubles as GRPO reward function,
+- explicit schemas,
+- richer operational signals (ELO + calibration + oversight + debate),
+- persisted leaderboard state,
+- **actual RL training with measurable improvement** (not just an eval loop).
+
+Active technical debt to track:
+- process-global mutable runtime state in `server/app.py`,
+- task arrays are currently shuffled from shared objects in memory,
+- leaderboard record endpoint should enforce tighter input validation,
+- expert-tier performance still low (3B model limitation).
+
+---
+
+## Why this matters
+
+The project goal is not just "detect hallucinations."  
+It is to train systems that:
+
+1. catch factual mistakes under adversarial pressure,
+2. remain calibrated under uncertainty,
+3. expose governance signals that can trigger safer behavior,
+4. **demonstrably improve through RL training on the environment's reward signal.**
+
+We built the environment, trained a model on it, and proved the model gets meaningfully better. That combination is what moves a hallucination detector from benchmark toy to deployable component.
+
+---
+
+Built by Team TLE for Meta PyTorch OpenEnv Hackathon x Scaler 2026.
