@@ -110,7 +110,7 @@ Through GRPO training, the model acquired:
 
 ## How to Reproduce
 
-1. Open the [Colab notebook](https://colab.research.google.com/drive/1vrqo8CFXBYJi3lHaFJWVQSPgcw9B34rz?usp=sharing)
+1. Open the [Colab notebook] (https://colab.research.google.com/drive/1hZ3UVzNT1Fug-59Iea5JcU7BvQDoUe_C?usp=sharing)
 2. Ensure a T4 GPU runtime is selected
 3. Run all cells in order
 4. Training takes approximately 1-2 hours
