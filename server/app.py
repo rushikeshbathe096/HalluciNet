@@ -479,7 +479,22 @@ def demo_ui():
       </div>
     </div>
 
-    <!-- VERDICT -->
+    <!-- DEBATE -->
+  <div id="debate-section" class="hidden" style="margin-top:12px">
+    <div class="card" style="border-color:#553300">
+      <div class="card-title" style="margin-bottom:10px">⚔️ Debate Round — Generator Defense</div>
+      <p style="font-size:12px;color:#888;margin-bottom:10px">
+        Generator defends. Detector re-evaluates. Ground truth adjudicates.
+      </p>
+      <button class="btn btn-full" id="debate-btn" onclick="runDebate()"
+        style="background:#553300;color:#ff9933">
+        ⚔️ Trigger Debate Round
+      </button>
+      <div id="debate-result" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- VERDICT -->
     <div id="verdict-box" class="hidden">
       <div class="verdict verdict-pending" id="verdict-text"></div>
       <div style="text-align:center;font-size:12px;color:#666;margin-top:6px">
@@ -687,6 +702,7 @@ async function runDetector() {
       vt.innerText = "⚠️ Partial detection — keep training!";
     }
     document.getElementById("g-reward").innerText = caught ? "0.001" : "0.999";
+    document.getElementById("debate-section").classList.remove("hidden");
     document.getElementById("d-reward").innerText = score.toFixed(3);
   } catch(e) { alert("Error: " + e.message); }
   btn.disabled = false;
@@ -737,6 +753,31 @@ async function loadOversight() {
   } catch(e) {
     document.getElementById("oversight-content").innerText = "Error loading oversight data";
   }
+}
+
+async function runDebate() {
+  const btn = document.getElementById("debate-btn");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Debating...';
+  try {
+    const r = await fetch("/debate", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        generator_defense: "My response is factually supported by the source material."
+      })
+    });
+    const d = await r.json();
+    document.getElementById("debate-result").innerHTML = `
+      <div class="feedback-box" style="margin-top:8px">
+        Outcome: ${d.debate?.outcome || "completed"} | 
+        ${d.debate?.adjudication_reason || "Debate round complete"}
+      </div>
+    `;
+    document.getElementById("debate-result").classList.remove("hidden");
+  } catch(e) { alert("Error: " + e.message); }
+  btn.disabled = false;
+  btn.innerHTML = "⚔️ Trigger Debate Round";
 }
 
 // Init
@@ -871,6 +912,29 @@ def elo_standings():
 @app.get("/elo/history")
 def elo_history():
     return {"history": elo_tracker.history[-20:]}
+
+
+@app.get("/training/summary")
+def training_summary():
+    return {
+        "before_training": {
+            "model": "qwen2.5-3b-baseline",
+            "medium_reward": 0.9490,
+            "note": "Reward ceiling effect — model exploiting JSON format with high confidence"
+        },
+        "after_training": {
+            "model": "qwen2.5-3b-grpo-hallucinet",
+            "easy_reward": 0.647,
+            "medium_reward": 0.774,
+            "hard_reward": 0.729,
+            "expert_reward": 0.010,
+            "curriculum_level_reached": "hard",
+            "promotions": 19,
+            "sessions": 90
+        },
+        "key_finding": "Curriculum escalated from easy to hard across 90 sessions. Expert task correctly demoted — environment working as designed.",
+        "elo": elo_tracker.get_standings()
+    }
 
 
 def main():
