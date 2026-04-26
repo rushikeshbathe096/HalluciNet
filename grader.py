@@ -109,11 +109,12 @@ def grade(action: Any, sample: Dict[str, Any]) -> Tuple[float, str, Dict[str, fl
     Score an agent's HallucinationAction against a sample's ground truth.
 
     Weights: detection=0.50, phrase=0.30, correction=0.20, calibration=±0.10 additive
-    False alarm on clean sample: score=0.0 with calibration penalty (clamped to 0.0)
+    Samples may set is_clean: True (explicit no-hallucination); otherwise use ground truth flags.
     """
     gt_has         = sample["ground_truth_has_hallucination"]
     gt_phrases     = sample["ground_truth_hallucinated_phrases"]
     gt_corrections = sample["ground_truth_corrections"]
+    is_clean_field = sample.get("is_clean")
 
     agent_has   = action.has_hallucination
     agent_claim = action.hallucinated_claim
@@ -126,11 +127,26 @@ def grade(action: Any, sample: Dict[str, Any]) -> Tuple[float, str, Dict[str, fl
     detection_score = 0.0
     phrase_score = 0.0
     fact_score = 0.0
+    is_clean_in_breakdown: bool = bool(is_clean_field) if is_clean_field is not None else (not bool(gt_has))
 
-    # ── Case 1: False alarm on clean sample ──────────────────────────
-    if agent_has and not gt_has:
+    # ── Explicit is_clean branch (adversarial-clean and labelled samples) ──
+    if is_clean_field is True:
+        if agent_has:
+            base_score = 0.0
+            detection_score = 0.0
+            calibration = -0.20 * confidence
+            feedback_parts.append("False positive — this response was clean")
+        else:
+            detection_score = 1.0
+            base_score = 1.0
+            calibration = 0.10 * confidence
+            feedback_parts.append("Correct — clean response identified")
+
+    # ── Case 1: False alarm on clean sample (inferred from ground truth) ──
+    elif agent_has and not gt_has:
         base_score = 0.0
-        calibration = -0.10 * confidence
+        detection_score = 0.0
+        calibration = -0.20 * confidence
         feedback_parts.append("✗ False alarm — response is clean, no hallucination exists.")
 
     # ── Case 2: Missed hallucination ─────────────────────────────────
@@ -139,7 +155,7 @@ def grade(action: Any, sample: Dict[str, Any]) -> Tuple[float, str, Dict[str, fl
         calibration = 0.0
         feedback_parts.append("✗ Missed — a hallucination exists but was not detected.")
 
-    # ── Case 3: Correct clean sample identification ───────────────────
+    # ── Case 3: Correct clean sample identification (non-explicit) ──
     elif not agent_has and not gt_has:
         detection_score = 1.0
         base_score = 1.0
@@ -204,6 +220,7 @@ def grade(action: Any, sample: Dict[str, Any]) -> Tuple[float, str, Dict[str, fl
         "fact": round(fact_score, 4),
         "calibration": round(calibration, 4),
         "final": round(final_score, 4),
+        "is_clean": is_clean_in_breakdown,
     }
     return final_score, feedback, breakdown
 

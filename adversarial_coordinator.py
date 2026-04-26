@@ -323,7 +323,6 @@ def run_adversarial_session(
             gen_fooling_rate,
             round_num,
         )
-
         results.append(result)
         previous_caught = result["detector_caught"]
 
@@ -361,3 +360,4 @@ def run_adversarial_session(
     print(f"{'=' * 60}\n", flush=True)
 
     return summary
+

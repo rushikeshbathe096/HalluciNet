@@ -25,24 +25,29 @@ port: 7860
 
 tasks:
   - id: easy
-    description: "Detector task. 8 samples. Obvious hallucinations. 2 clean samples."
+    description: "Detector task. 10 samples. Obvious hallucinations. 2 clean samples."
     difficulty: easy
     max_steps: 10
 
   - id: medium
-    description: "Detector task. 10 samples. Mixed errors. 2 clean samples."
+    description: "Detector task. 12 samples. Mixed errors. 2 clean samples."
     difficulty: medium
     max_steps: 12
 
   - id: hard
-    description: "Detector task. 15 samples. Adversarial traps, negation, entity confusion."
+    description: "Detector task. 19 samples. Adversarial traps, negation, entity confusion."
     difficulty: hard
-    max_steps: 15
+    max_steps: 20
 
   - id: expert
     description: "Detector task. 20 samples. Multi-hop reasoning, date arithmetic, adversarial clean."
     difficulty: expert
     max_steps: 22
+
+  - id: adversarial
+    description: "Detector task. 12 samples. Research-grade traps. Correct arithmetic, false narrative."
+    difficulty: adversarial
+    max_steps: 15
 
 action_space:
   type: object

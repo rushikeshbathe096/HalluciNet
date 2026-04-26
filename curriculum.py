@@ -155,3 +155,48 @@ class AdversarialCurriculumManager:
             "demotions": self.demotions,
             "sessions_completed": len(self.session_log),
         }
+
+    def get_status(self) -> dict:
+        """
+        Full dynamic curriculum snapshot: averages and what is needed to promote.
+        """
+        det_avg = (
+            sum(self.detector_history) / len(self.detector_history)
+            if self.detector_history
+            else 0.0
+        )
+        gen_avg = (
+            sum(self.generator_history) / len(self.generator_history)
+            if self.generator_history
+            else 0.0
+        )
+        window_full = len(self.detector_history) >= self.window
+        need = max(0, self.window - len(self.detector_history))
+        if not window_full:
+            next_promo = (
+                f"Need {need} more completed session(s) to evaluate promotion window "
+                f"({self.window} sessions at >= {PROMOTION_THRESHOLD} detector catch rate)."
+            )
+        elif det_avg < PROMOTION_THRESHOLD and self.current_level < len(TASK_ORDER) - 1:
+            gap = PROMOTION_THRESHOLD - det_avg
+            next_promo = (
+                f"Detector running average {det_avg:.2f} is {gap:.2f} below "
+                f"promotion threshold {PROMOTION_THRESHOLD}; need sustained improvement."
+            )
+        elif self.current_level >= len(TASK_ORDER) - 1:
+            next_promo = "Already at maximum task in TASK_ORDER; no further promotion."
+        else:
+            next_promo = (
+                f"Detector avg {det_avg:.2f} / generator avg {gen_avg:.2f} — "
+                f"eligibility for promotion re-evaluated each {self.window}-session window."
+            )
+        return {
+            "current_task": self.current_task,
+            "current_level": self.current_level,
+            "promotions": self.promotions,
+            "promotion_threshold": float(PROMOTION_THRESHOLD),
+            "sessions_completed": len(self.session_log),
+            "detector_avg": round(det_avg, 4),
+            "generator_avg": round(gen_avg, 4),
+            "next_promotion": next_promo,
+        }

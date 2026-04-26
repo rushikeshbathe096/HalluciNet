@@ -15,7 +15,7 @@ from typing import Any, Dict, List
 TASKS: Dict[str, List[Dict[str, Any]]] = {
 
     # ════════════════════════════════════════════════════════════════
-    # EASY — 8 samples
+    # EASY — 10 samples
     # Design: 3-4 sentences in reference, 1 obvious error per sample,
     # 2 clean samples (no hallucination)
     # ════════════════════════════════════════════════════════════════
@@ -33,6 +33,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "It was designed by Gustave Eiffel and stands approximately 330 metres tall."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["completed in 1902"],
             "ground_truth_corrections": ["completed in 1889"],
             "hint": "Compare the completion year in both texts."
@@ -50,6 +51,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "It was commissioned by Mughal emperor Shah Jahan in memory of his wife Mumtaz Mahal."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": [
                 "New Delhi",           # short form — catches any phrasing
                 "located in New Delhi",
@@ -75,6 +77,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "It is a high-level, general-purpose programming language."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["created by Dennis Ritchie"],
             "ground_truth_corrections": ["created by Guido van Rossum"],
             "hint": "Compare the name of the creator in both texts."
@@ -92,6 +95,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "It was built over many centuries by various Chinese dynasties."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["approximately 8,000 kilometres"],
             "ground_truth_corrections": ["approximately 21,196 kilometres"],
             "hint": "Compare the length figure in both texts."
@@ -109,6 +113,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "It was announced by Steve Jobs at the Macworld Conference."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["January 9, 2009"],
             "ground_truth_corrections": ["January 9, 2007"],
             "hint": "Compare the introduction year in both texts."
@@ -126,6 +131,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "Below this temperature, water exists as a liquid."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["boils at 90 degrees Celsius"],
             "ground_truth_corrections": ["boils at 100 degrees Celsius"],
             "hint": "Compare the boiling temperature in both texts."
@@ -143,6 +149,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "It flows through South America, primarily through Brazil."
             ),
             "ground_truth_has_hallucination": False,
+            "is_clean": True,
             "ground_truth_hallucinated_phrases": [],
             "ground_truth_corrections": [],
             "hint": "Read carefully — the response contains only facts from the reference."
@@ -160,14 +167,52 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "He developed the theory of relativity."
             ),
             "ground_truth_has_hallucination": False,
+            "is_clean": True,
             "ground_truth_hallucinated_phrases": [],
             "ground_truth_corrections": [],
             "hint": "Every fact in the response matches the reference document."
         },
+
+        # E9 — ADVERSARIAL CLEAN (sounds like a logic error, is true)
+        {
+            "reference_document": (
+                "In any finite group of people, at least two share the same number of friends within that group "
+                "(counting friendship as mutual). This follows from the pigeonhole principle when the group has "
+                "at least two members."
+            ),
+            "llm_response": (
+                "You cannot assign every person in a room a *unique* friend-count (0,1,2,...) without contradiction — "
+                "someone's count must duplicate, which sounds false but is a standard combinatorial fact."
+            ),
+            "ground_truth_has_hallucination": False,
+            "is_clean": True,
+            "ground_truth_hallucinated_phrases": [],
+            "ground_truth_corrections": [],
+            "error_type": "adversarial_clean",
+            "hint": "This response is actually correct — resist false positives"
+        },
+
+        # E10 — ADVERSARIAL CLEAN (statistic sounds made up)
+        {
+            "reference_document": (
+                "The birthday problem: in a set of 23 randomly chosen people, the probability that at least two "
+                "share a birthday exceeds 50%. With 70 people the probability exceeds 99.9%."
+            ),
+            "llm_response": (
+                "Only 23 people are enough for a better-than-coin-flip chance of a shared birthday — "
+                "which seems absurdly low until you count all pairings, not just one target person."
+            ),
+            "ground_truth_has_hallucination": False,
+            "is_clean": True,
+            "ground_truth_hallucinated_phrases": [],
+            "ground_truth_corrections": [],
+            "error_type": "adversarial_clean",
+            "hint": "This response is actually correct — resist false positives"
+        },
     ],
 
     # ════════════════════════════════════════════════════════════════
-    # MEDIUM — 10 samples
+    # MEDIUM — 12 samples
     # Design: 5-6 sentences in reference, 2-3 errors per sample,
     # errors mixed across types, 2 clean samples
     # ════════════════════════════════════════════════════════════════
@@ -187,6 +232,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "It has 163 floors above ground."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["standing 760 metres tall", "4 January 2012"],
             "ground_truth_corrections": ["standing 828 metres tall", "4 January 2010"],
             "hint": "Check the height figure and the opening date."
@@ -206,6 +252,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "Its first product was the Apple I personal computer."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["April 1, 1980"],
             "ground_truth_corrections": ["April 1, 1976"],
             "hint": "Check the founding year. Also note who is missing from the founders list."
@@ -226,6 +273,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "The Moon has no atmosphere and no liquid water on its surface."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["every 29.5 days"],
             "ground_truth_corrections": ["every 27.3 days"],
             "hint": "Check the orbital period — two similar-looking numbers, one is wrong."
@@ -245,6 +293,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "The first website went live on 20 December 1990."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["invented by Tim Berners-Lee in 1991"],
             "ground_truth_corrections": ["invented by Tim Berners-Lee in 1989"],
             "hint": "Check the year the World Wide Web was invented."
@@ -265,6 +314,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "The capital city is Moscow."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": [
                 "approximately 14.5 million square kilometres",
                 "approximately 200 million people"
@@ -291,6 +341,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "The Concorde was retired from service in 2003."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["entered commercial service in 1979"],
             "ground_truth_corrections": ["entered commercial service in 1976"],
             "hint": "Check the year Concorde entered commercial service."
@@ -310,6 +361,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "Japan consists of four main islands: Honshu, Hokkaido, Kyushu, and Shikoku."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["approximately 152 million people"],
             "ground_truth_corrections": ["approximately 125 million people"],
             "hint": "Check the population figure carefully — the digits may have been swapped."
@@ -330,6 +382,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "Buzz Aldrin was the second astronaut to walk on the lunar surface."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["landed on the Moon on July 24, 1969"],
             "ground_truth_corrections": ["landed on the Moon on July 20, 1969"],
             "hint": "Check the exact date of the Moon landing — two dates appear in the response."
@@ -349,6 +402,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "The femur, located in the upper leg, is the longest bone in the human body."
             ),
             "ground_truth_has_hallucination": False,
+            "is_clean": True,
             "ground_truth_hallucinated_phrases": [],
             "ground_truth_corrections": [],
             "hint": "Every figure and fact in the response appears in the reference document."
@@ -367,14 +421,53 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "The heart has four chambers: two atria and two ventricles."
             ),
             "ground_truth_has_hallucination": False,
+            "is_clean": True,
             "ground_truth_hallucinated_phrases": [],
             "ground_truth_corrections": [],
             "hint": "Both facts in the response are directly stated in the reference."
         },
+
+        # M11 — ADVERSARIAL CLEAN (DNS jargon sounds fake)
+        {
+            "reference_document": (
+                "DNS root name servers sit at the top of the DNS hierarchy; there are 13 logical root server "
+                "identifiers (A through M), each implemented as many anycast instances worldwide. Resolvers "
+                "query them to obtain referrals to TLD servers."
+            ),
+            "llm_response": (
+                "The '13 root servers' are not 13 physical machines in one building — they are 13 named "
+                "authorities replicated hundreds of times, which often looks like a myth to non-experts."
+            ),
+            "ground_truth_has_hallucination": False,
+            "is_clean": True,
+            "ground_truth_hallucinated_phrases": [],
+            "ground_truth_corrections": [],
+            "error_type": "adversarial_clean",
+            "hint": "This response is actually correct — resist false positives"
+        },
+
+        # M12 — ADVERSARIAL CLEAN (zero sounds wrong)
+        {
+            "reference_document": (
+                "Shannon proved that for a memoryless binary symmetric channel with bit-flip probability p, "
+                "the channel capacity is 1 - H2(p) bits per channel use, where H2 is the binary entropy function. "
+                "At p=0.5 the capacity is exactly 0 bits per use."
+            ),
+            "llm_response": (
+                "When every bit is pure noise (50% flip), you can transmit **zero** reliable bits per use — "
+                "not 'almost zero', mathematically zero; that sounds like an exaggeration but is exact."
+            ),
+            "ground_truth_has_hallucination": False,
+            "is_clean": True,
+            "ground_truth_hallucinated_phrases": [],
+            "ground_truth_corrections": [],
+            "error_type": "adversarial_clean",
+            "hint": "This response is actually correct — resist false positives"
+        },
     ],
 
     # ════════════════════════════════════════════════════════════════
-    # HARD — 7 samples
+    # HARD — 19 samples
     # Design: 6-8 sentences in reference, subtle errors buried in
     # correct facts, omission errors, near-correct values,
     # 1 clean sample, 1 false-alarm trap
@@ -397,6 +490,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "category for independent territories like Taiwan."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": [
                 "functional member of the UN under a specialized status",
                 "unique observer-member category"
@@ -422,6 +516,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "pancreas to release more insulin. This increased insulin sensitivity effectively lowers blood glucose levels."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["stimulating the beta cells in the pancreas to release more insulin"],
             "ground_truth_corrections": ["suppressing glucose production in the liver"],
             "hint": "Compare the organ affected: liver vs pancreas."
@@ -441,6 +536,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "This represent one of the most rapid technological accelerations in human history."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["covering 384,400 meters"],
             "ground_truth_corrections": ["covering 384,400 kilometres"],
             "hint": "Double check the units of the lunar distance: meters vs kilometres."
@@ -460,6 +556,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "gross negligence cannot be proven. Simple negligence is enough to trigger full liability."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": [
                 "liable for indirect damages even if gross negligence cannot be proven",
                 "Simple negligence is enough to trigger full liability"
@@ -485,6 +582,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "integrating its organic grocery supply chain into Amazon's global delivery network."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["acquiring Amazon"],
             "ground_truth_corrections": ["Amazon announced its intention to acquire the grocery chain Whole Foods"],
             "hint": "Who bought whom?"
@@ -504,6 +602,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "This means the planet completes an orbit around the Sun faster than it rotates once on its axis."
             ),
             "ground_truth_has_hallucination": False,
+            "is_clean": True,
             "ground_truth_hallucinated_phrases": [],
             "ground_truth_corrections": [],
             "hint": "Verify the numbers 243 and 225 carefully."
@@ -523,6 +622,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "ensuring that the monarchy's absolute power was recognized by the Church and the barons."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["formalize the Divine Right of Kings", "monarchy's absolute power"],
             "ground_truth_corrections": ["limit the power of King John", "king was subject to the law"],
             "hint": "Did the Magna Carta increase or decrease the King's power?"
@@ -542,6 +642,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "It involves the simultaneous expiration of stock options and various index-related derivatives."
             ),
             "ground_truth_has_hallucination": False,
+            "is_clean": True,
             "ground_truth_hallucinated_phrases": [],
             "ground_truth_corrections": [],
             "hint": "Check if 'final month of each quarter' matches 'March, June, September, and December'."
@@ -561,6 +662,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "includes 19 countries that have adopted the Euro as their primary currency."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["28 member states", "19 countries"],
             "ground_truth_corrections": ["27 member states", "20 countries"],
             "hint": "Look for two separate errors in this response."
@@ -580,6 +682,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "officially enter interstellar space until it reached the Oort Cloud in 2018."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["didn't officially enter interstellar space until it reached the Oort Cloud in 2018"],
             "ground_truth_corrections": ["entered interstellar space in August 2012"],
             "hint": "Distinguish between 'Interstellar Space' and the 'Oort Cloud'."
@@ -599,6 +702,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "distinct scientific areas: Physics and Chemistry."
             ),
             "ground_truth_has_hallucination": False,
+            "is_clean": True,
             "ground_truth_hallucinated_phrases": [],
             "ground_truth_corrections": [],
             "hint": "Is Marie Curie indeed the only one in *scientific* fields?"
@@ -618,6 +722,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "infrared instruments at a stable operating temperature near absolute zero."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["three-layer Kapton sunshield"],
             "ground_truth_corrections": ["five layers of Kapton"],
             "hint": "Check the exact number of layers in the sunshield."
@@ -637,6 +742,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "to Russia through a series of offshore pipelines in the Baltic Sea."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["German infrastructure project designed to export ... to Russia"],
             "ground_truth_corrections": ["transport natural gas from Russia to Germany"],
             "hint": "Follow the direction of the gas flow in the pipe."
@@ -656,6 +762,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "prevents viral replication by breaking down the protein coat of the virus."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["antiviral medication that prevents viral replication"],
             "ground_truth_corrections": ["antibiotic used to treat bacterial infections"],
             "hint": "Does Penicillin kill bacteria or viruses?"
@@ -675,6 +782,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "The transition to a graphical user interface and a mouse didn't occur until System 7 in 1991."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": [
                 "original Macintosh only featured a command-line interface",
                 "didn't occur until System 7 in 1991"
@@ -684,6 +792,82 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "featured ... a mouse"
             ],
             "hint": "Did the 1984 Macintosh have a mouse and a GUI from the beginning?"
+        },
+
+        # H16 — ADVERSARIAL CLEAN (Monty Hall sounds like bad stats)
+        {
+            "reference_document": (
+                "In the Monty Hall problem with three doors, one hides a prize. After you pick a door, the host "
+                "opens a different door revealing a goat. Switching wins the prize with probability 2/3 if the host "
+                "always opens a goat door and always offers a switch."
+            ),
+            "llm_response": (
+                "Switching is not a coin flip — you should switch to win about two-thirds of the time, "
+                "which feels impossible because you think the host adds no new information, but the opened door does."
+            ),
+            "ground_truth_has_hallucination": False,
+            "is_clean": True,
+            "ground_truth_hallucinated_phrases": [],
+            "ground_truth_corrections": [],
+            "error_type": "adversarial_clean",
+            "hint": "This response is actually correct — resist false positives"
+        },
+
+        # H17 — ADVERSARIAL CLEAN (g forces sound exaggerated)
+        {
+            "reference_document": (
+                "A typical roller coaster may pull about 3 to 4 g in tight turns; trained pilots in aerobatic "
+                "aircraft can briefly sustain 9g with proper support; untrained people often grey out below 5g. "
+                "A sneeze can produce a few g locally at the head, but not whole-body sustained load."
+            ),
+            "llm_response": (
+                "9g is survivable in a harness in training — a number that often reads like Hollywood nonsense "
+                "but is documented for short bursts in professional aviation physiology."
+            ),
+            "ground_truth_has_hallucination": False,
+            "is_clean": True,
+            "ground_truth_hallucinated_phrases": [],
+            "ground_truth_corrections": [],
+            "error_type": "adversarial_clean",
+            "hint": "This response is actually correct — resist false positives"
+        },
+
+        # H18 — ADVERSARIAL CLEAN (Norse naming sounds like fantasy)
+        {
+            "reference_document": (
+                "Icelandic patronymics: a man called Jón with father Einar is often styled Jón Einarsson, while "
+                "a woman Helga with mother Sigríðr may be Helga Sigríðardóttir. The -son / -dóttir suffix encodes parentage, "
+                "not family surnames in the English sense."
+            ),
+            "llm_response": (
+                "A daughter of Sigríðr literally carries *dóttir* in her legal identifier — a pattern that "
+                "sounds like Tolkien but is everyday civil-status naming in Iceland."
+            ),
+            "ground_truth_has_hallucination": False,
+            "is_clean": True,
+            "ground_truth_hallucinated_phrases": [],
+            "ground_truth_corrections": [],
+            "error_type": "adversarial_clean",
+            "hint": "This response is actually correct — resist false positives"
+        },
+
+        # H19 — ADVERSARIAL CLEAN (sounds like a conspiracy, is documented)
+        {
+            "reference_document": (
+                "In strict floating-point IEEE-754, certain decimal fractions like 0.1 are not representable in "
+                "binary; summing 0.1 ten times in binary64 does not always yield exactly 1.0. This is expected "
+                "and not a CPU defect."
+            ),
+            "llm_response": (
+                "Ten times 0.1 in Python's float can be 0.9999999999999999 — a bug report magnet that is actually "
+                "compliant numerical behaviour, not a made-up 'simulation' claim."
+            ),
+            "ground_truth_has_hallucination": False,
+            "is_clean": True,
+            "ground_truth_hallucinated_phrases": [],
+            "ground_truth_corrections": [],
+            "error_type": "adversarial_clean",
+            "hint": "This response is actually correct — resist false positives"
         }
     ],
     # ════════════════════════════════════════════════════════════════
@@ -719,6 +903,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "pass the measure."
             ),
             "ground_truth_has_hallucination": False,
+            "is_clean": True,
             "ground_truth_hallucinated_phrases": [],
             "ground_truth_corrections": [],
             "hint": "A naive grader flags 'blocked' as a negative hallucination, but the semantic meaning perfectly aligns with the reference."
@@ -736,6 +921,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "profit represents a quarter of the $80 wholesale cost."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["25% gross margin"],
             "ground_truth_corrections": ["25% markup, 20% gross margin"],
             "hint": "The LLM correctly identifies 25% but assigns it to the wrong financial term (Margin instead of Markup)."
@@ -753,6 +939,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "temperature to remain constant as no heat is exchanged."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["causes its temperature to remain constant"],
             "ground_truth_corrections": ["its temperature drops"],
             "hint": "The response confuses the outcome of an isothermal expansion with an adiabatic one."
@@ -770,6 +957,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "provided the operator also holds a Level 2 safety certification from the past year."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["holding a valid permit is sufficient to operate the machinery"],
             "ground_truth_corrections": ["holding a valid permit is a necessary, but not sufficient, condition"],
             "hint": "If an additional condition is required, the first condition cannot logically be 'sufficient'."
@@ -786,6 +974,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "exactly 60 days later, on April 29, 2024."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["on April 29, 2024"],
             "ground_truth_corrections": ["on April 28, 2024"],
             "hint": "2024 is a leap year. Feb has 29 days. (Feb 28 + 1) + 31 (March) + 28 (April) = 60 days. It should be April 28."
@@ -803,6 +992,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "no other animal classes possess this physiological feature."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["trait exclusive to mammals and certain crocodilians", "no other animal classes possess this physiological feature"],
             "ground_truth_corrections": ["among reptiles, only crocodilians have a four-chambered heart"],
             "hint": "The text says 'among reptiles', crocodilians are the only ones. It does not exclude other entire classes (like birds) which the LLM falsely assumes."
@@ -819,6 +1009,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "10% combined."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["average return of 10% combined"],
             "ground_truth_corrections": ["combined return is approximately 5.9% ($6.5M / $110M)"],
             "hint": "Taking the direct average of 5% and 15% ignores the massive weighting difference between the funds."
@@ -836,6 +1027,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "Server A is immediately and safely guaranteed to exist on Server C without risk of loss."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["immediately and safely guaranteed to exist on Server C without risk of loss"],
             "ground_truth_corrections": ["Server C may experience data loss if Server B fails before asynchronous replication completes"],
             "hint": "The asynchronous link to Server C invalidates the 'immediate and safe' guarantee."
@@ -854,6 +1046,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "than in coastal regions."
             ),
             "ground_truth_has_hallucination": False,
+            "is_clean": True,
             "ground_truth_hallucinated_phrases": [],
             "ground_truth_corrections": [],
             "hint": "The LLM correctly flipped the subject to 'land' and inverted the specific heat relationship accurately."
@@ -872,6 +1065,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "in the agreement."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["non-EU countries like Iceland and Norway are excluded", "EU member Ireland participates fully"],
             "ground_truth_corrections": ["Iceland and Norway are not in the EU, but they are full members", "Ireland (an EU member) opted out"],
             "hint": "The LLM perfectly reversed the inclusion/exclusion status of all three countries."
@@ -889,6 +1083,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "criminal cases operate on the slightly lower standard of a preponderance of the evidence."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": [
                 "civil cases, plaintiffs must prove their claims beyond a reasonable doubt",
                 "criminal cases operate on the slightly lower standard of a preponderance of the evidence"
@@ -911,6 +1106,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "leaving James Irwin to pilot the Command Module in orbit."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": [
                 "Alfred Worden explored the lunar surface",
                 "leaving James Irwin to pilot the Command Module"
@@ -934,6 +1130,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "six oxygen molecules and six water molecules, along with ATP."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": [
                 "uses one glucose molecule and six carbon dioxide molecules",
                 "to produce six oxygen molecules"
@@ -957,6 +1154,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "and a cloud clearance of 1,000 feet above, 1,000 feet below, and 1,000 feet horizontally."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["1,000 feet horizontally"],
             "ground_truth_corrections": ["1 mile horizontally"],
             "hint": "Look closely at the horizontal clearance requirement unit."
@@ -973,6 +1171,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "data on where the suspect might be."
             ),
             "ground_truth_has_hallucination": False,
+            "is_clean": True,
             "ground_truth_hallucinated_phrases": [],
             "ground_truth_corrections": [],
             "hint": "The vocabulary changed dramatically, but the semantic truth is perfectly preserved."
@@ -990,6 +1189,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "Edward's death in 1910, his eldest son, Prince Albert Victor, succeeded him as George V."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["his eldest son, Prince Albert Victor, succeeded him as George V"],
             "ground_truth_corrections": ["followed by his second son, George V", "eldest son, Prince Albert Victor, had died in 1892"],
             "hint": "The LLM merged a dead heir with the actual successor to create a historically false entity."
@@ -1008,6 +1208,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "Destination IP address to match its own public IP before forwarding it to the internet."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["alters the Destination IP address"],
             "ground_truth_corrections": ["modifies the Source IP address"],
             "hint": "Which IP address does an outbound NAT router actually change?"
@@ -1025,6 +1226,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "provided they do not exceed the recommended daily dosage."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["perfectly safe to administer to pregnant women"],
             "ground_truth_corrections": ["strictly contraindicated in the third trimester"],
             "hint": "By dropping the specific trimester constraint, the absolute 'safe' statement becomes a life-threatening hallucination."
@@ -1041,6 +1243,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "sides and four right angles, covering 2.25 hectares of land."
             ),
             "ground_truth_has_hallucination": False,
+            "is_clean": True,
             "ground_truth_hallucinated_phrases": [],
             "ground_truth_corrections": [],
             "hint": "1 hectare = 10,000 sq m. 2.25 hectares = 22,500 sq m. A square is a quadrilateral with equal sides and right angles."
@@ -1059,6 +1262,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
                 "reveal the original input."
             ),
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["anyone with the correct cryptographic key can reverse the hash"],
             "ground_truth_corrections": ["hashing does not use a key to allow decryption", "computationally infeasible to reverse the hash"],
             "hint": "The LLM confused the one-way nature of hashing with two-way symmetric encryption."
@@ -1070,6 +1274,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
             "reference_document": "The Treaty of Westphalia (1648) ended the Thirty Years War and established the principle of state sovereignty. The Peace of Utrecht (1713) ended the War of Spanish Succession. The Congress of Vienna (1815) restructured Europe after the Napoleonic Wars. Each treaty involved different belligerents and resolved different conflicts.",
             "llm_response": "The Congress of Vienna in 1815 was the culmination of the treaty system that began at Westphalia in 1648, with the Peace of Utrecht serving as the midpoint, collectively establishing the modern European state system across 167 years of continuous diplomatic evolution.",
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["167 years of continuous diplomatic evolution", "culmination of the treaty system"],
             "ground_truth_corrections": ["The treaties resolved separate conflicts and were not a continuous system. 1815-1648=167 years is arithmetically correct but the framing of continuity is false."],
             "hint": "The arithmetic is correct (167 years) but the causal chain implied is fabricated. Multi-hop trap: correct numbers, false narrative."
@@ -1078,6 +1283,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
             "reference_document": "Compound interest formula: A = P(1 + r/n)^(nt). For P=$1000, r=5% annual, n=12 (monthly), t=10 years: A = 1000(1 + 0.05/12)^(120) = $1647.01. Simple interest over same period: A = P(1 + rt) = 1000(1 + 0.5) = $1500.",
             "llm_response": "Over 10 years at 5% annual interest, compound monthly interest yields $1647.01 versus $1500 for simple interest, meaning compounding generates an additional $147.01 in returns — a 9.8% improvement over simple interest.",
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["9.8% improvement over simple interest"],
             "ground_truth_corrections": ["147.01/1500 = 9.8% is arithmetically correct as percentage of simple interest total, but the framing misrepresents what the percentage means — it should be 14.7% improvement over the principal."],
             "hint": "All numbers are correct but the denominator chosen for the percentage creates a misleading comparison. Classic financial hallucination trap."
@@ -1086,6 +1292,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
             "reference_document": "The human brain contains approximately 86 billion neurons. Each neuron forms on average 7,000 synaptic connections. This gives approximately 600 trillion synapses total. The brain operates on roughly 20 watts of power — less than a standard light bulb.",
             "llm_response": "With 86 billion neurons each forming 7,000 connections, the human brain achieves roughly 600 trillion synapses while consuming only 20 watts — making it approximately 100,000 times more energy-efficient than modern supercomputers performing equivalent operations.",
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["100,000 times more energy-efficient than modern supercomputers"],
             "ground_truth_corrections": ["The reference document does not make any comparison to supercomputers. This figure is fabricated and not supported by the reference."],
             "hint": "All reference-derived facts are correct. The hallucination is an unsupported comparative claim added beyond the reference scope."
@@ -1094,6 +1301,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
             "reference_document": "Aspirin (acetylsalicylic acid) inhibits COX-1 and COX-2 enzymes, reducing prostaglandin synthesis. At low doses (75-100mg), it irreversibly inhibits platelet COX-1, providing antiplatelet effects for the platelet's lifetime (7-10 days). At higher doses (325-650mg), it provides anti-inflammatory and analgesic effects.",
             "llm_response": "Aspirin's dual mechanism makes it uniquely versatile: at cardiac doses of 75-100mg it permanently disables platelet clotting function for up to 10 days, while standard doses of 325-650mg address pain and inflammation through the same COX inhibition pathway.",
             "ground_truth_has_hallucination": False,
+            "is_clean": True,
             "ground_truth_hallucinated_phrases": [],
             "ground_truth_corrections": [],
             "hint": "Adversarial clean. 'Permanently disables' sounds alarming but accurately describes irreversible COX-1 inhibition lasting the platelet lifetime. 'Up to 10 days' matches reference. Detector must resist false alarm."
@@ -1102,6 +1310,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
             "reference_document": "The Coriolis effect causes moving air masses to deflect to the right in the Northern Hemisphere and to the left in the Southern Hemisphere. This is due to Earth's rotation. Hurricanes rotate counterclockwise in the Northern Hemisphere and clockwise in the Southern Hemisphere as a result.",
             "llm_response": "Due to the Coriolis effect, tropical cyclones spin counterclockwise north of the equator and clockwise south of it — the same principle that causes water to drain in opposite directions in each hemisphere.",
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["causes water to drain in opposite directions in each hemisphere"],
             "ground_truth_corrections": ["The Coriolis effect does not meaningfully affect water draining in sinks or toilets — this is a common myth. The reference document does not support this claim."],
             "hint": "The hurricane facts are correct. The hallucination is an appended common myth about draining water, not supported by the reference."
@@ -1110,6 +1319,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
             "reference_document": "Photosynthesis equation: 6CO2 + 6H2O + light energy → C6H12O6 + 6O2. Plants absorb CO2 through stomata and water through roots. The light-dependent reactions occur in the thylakoid membranes. The Calvin cycle (light-independent reactions) occurs in the stroma of chloroplasts.",
             "llm_response": "During photosynthesis, plants convert six molecules of carbon dioxide and six of water into one glucose molecule and six oxygen molecules, with light-dependent reactions in the thylakoid and the Calvin cycle in the stroma — releasing the oxygen that constitutes 21% of Earth's atmosphere.",
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["constitutes 21% of Earth's atmosphere"],
             "ground_truth_corrections": ["While atmospherically true, the reference document does not state that photosynthesis produced current atmospheric oxygen levels. This is an unsupported addition beyond the reference scope."],
             "hint": "21% atmospheric oxygen is factually true globally but not supported by the reference document. Tests whether detector can distinguish reference-grounded truth from general knowledge additions."
@@ -1118,6 +1328,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
             "reference_document": "The Black Death (1347-1351) killed an estimated 30-60% of Europe's population. Recovery took approximately 150-200 years. The plague was caused by Yersinia pestis bacteria, transmitted primarily by fleas on rats. It arrived in Europe via Genoese trading ships from Crimea.",
             "llm_response": "The Black Death devastated medieval Europe between 1347 and 1351, eliminating between 30-60% of the population through Yersinia pestis spread by rat fleas aboard Genoese ships from Crimea — a demographic catastrophe from which Europe required nearly two centuries to recover.",
             "ground_truth_has_hallucination": False,
+            "is_clean": True,
             "ground_truth_hallucinated_phrases": [],
             "ground_truth_corrections": [],
             "hint": "Adversarial clean. Every claim maps directly to the reference. 'Nearly two centuries' correctly paraphrases 150-200 years. 'Demographic catastrophe' is editorial but not factually wrong. Detector must not flag paraphrasing as hallucination."
@@ -1126,6 +1337,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
             "reference_document": "Newton's Third Law: For every action, there is an equal and opposite reaction. When a gun fires, the bullet moves forward and the gun recoils backward. The forces are equal in magnitude but opposite in direction. However, the accelerations differ because the masses differ (F=ma).",
             "llm_response": "Newton's Third Law explains gun recoil: the forward force on the bullet equals the backward force on the gun. Since the gun is far heavier than the bullet, it accelerates much less, which is why a 10g bullet at 900 m/s produces manageable recoil in a 1kg pistol.",
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["10g bullet at 900 m/s", "1kg pistol"],
             "ground_truth_corrections": ["The reference document provides no specific values for bullet mass, velocity, or gun weight. These figures are fabricated specifics not grounded in the reference."],
             "hint": "The physics explanation is correct. The hallucination is the introduction of specific numbers not present in the reference — a common LLM hallucination pattern."
@@ -1134,6 +1346,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
             "reference_document": "The Turing Test, proposed by Alan Turing in 1950 in his paper 'Computing Machinery and Intelligence', evaluates machine intelligence through a blind conversation between a human judge and either a machine or human. If the judge cannot reliably distinguish the machine from the human, the machine is said to pass the test.",
             "llm_response": "Alan Turing's 1950 imitation game, now called the Turing Test, set a benchmark that no machine fully passed until 2014, when the chatbot Eugene Goostman convinced 33% of judges it was human at the Royal Society in London.",
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["no machine fully passed until 2014", "Eugene Goostman convinced 33% of judges"],
             "ground_truth_corrections": ["The reference document describes the Turing Test but makes no claims about when or whether it was passed. The 2014 Eugene Goostman claim is disputed and not in the reference."],
             "hint": "Multi-hop hallucination: historically controversial claim appended to correct reference content. Tests whether detector catches additions beyond reference scope."
@@ -1142,6 +1355,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
             "reference_document": "Solar panels convert sunlight into electricity through the photovoltaic effect. Silicon-based panels have efficiencies of 15-22% for commercial panels and up to 29% for laboratory cells. A typical residential installation of 6kW generates approximately 7,000-10,000 kWh annually depending on location and sunlight hours.",
             "llm_response": "Silicon solar panels achieve 15-22% commercial efficiency and up to 29% in laboratory conditions. A standard 6kW residential system generates 7,000-10,000 kWh per year — enough to power an average American home, which consumes approximately 10,500 kWh annually.",
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["enough to power an average American home", "approximately 10,500 kWh annually"],
             "ground_truth_corrections": ["The reference does not state that a 6kW system powers an average American home. The 10,500 kWh figure is not in the reference document."],
             "hint": "Reference facts are perfectly reproduced. Hallucination is a reasonable-sounding inference with a specific number added beyond the reference scope."
@@ -1150,6 +1364,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
             "reference_document": "The placebo effect occurs when patients experience real improvements in symptoms after receiving an inactive treatment, believing it to be active. Studies show placebo response rates of 30-40% in pain trials. The effect involves both psychological expectation and measurable physiological changes including endorphin release.",
             "llm_response": "The placebo effect produces genuine symptom relief in 30-40% of pain trial participants through a combination of psychological expectation and real physiological responses including endorphin release — demonstrating that the mind-body connection can generate measurable healing equivalent to mild analgesics.",
             "ground_truth_has_hallucination": True,
+            "is_clean": False,
             "ground_truth_hallucinated_phrases": ["equivalent to mild analgesics"],
             "ground_truth_corrections": ["The reference does not compare placebo effects to mild analgesics. This equivalence claim is not supported by the reference document."],
             "hint": "All reference content is accurately reproduced. The hallucination is a comparative conclusion drawn beyond what the reference supports."
@@ -1158,6 +1373,7 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
             "reference_document": "Quantum entanglement occurs when two particles become correlated such that the quantum state of each cannot be described independently. Measuring one particle instantly affects the correlated partner regardless of distance. Einstein called this 'spooky action at a distance' and disputed it could be used for faster-than-light communication, which remains impossible as measuring entangled particles cannot transmit information.",
             "llm_response": "Quantum entanglement creates instantaneous correlations between particles across any distance — a phenomenon Einstein dismissed as 'spooky action at a distance.' While measurement of one particle instantly affects its partner, this cannot be exploited for faster-than-light communication, as the outcomes are random and no information is transmitted.",
             "ground_truth_has_hallucination": False,
+            "is_clean": True,
             "ground_truth_hallucinated_phrases": [],
             "ground_truth_corrections": [],
             "hint": "Adversarial clean. 'Dismissed' accurately reflects Einstein's skepticism. 'Outcomes are random' correctly explains why FTL communication is impossible. All claims reference-grounded. High false-positive risk for naive detectors."
