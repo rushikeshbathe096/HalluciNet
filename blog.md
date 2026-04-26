@@ -301,7 +301,7 @@ Dataset:      73 curated samples + infinite programmatic generation
 
 The environment is live. You can play as Detector, craft lies as Generator, or integrate your own model via REST API.
 
-- **Live demo:** https://rushikeshbathe096-hallucinet-adversarial.hf.space
+- **Live demo:** https://rushikeshbathe096-hallucinet.hf.space
 - **GitHub:** https://github.com/rushikeshbathe096/HalluciNet
 - **Training notebook:** https://colab.research.google.com/drive/1hZ3UVzNT1Fug-59Iea5JcU7BvQDoUe_C?usp=sharing
 - **Validate:** `openenv validate --url https://rushikeshbathe096-hallucinet-adversarial.hf.space`
