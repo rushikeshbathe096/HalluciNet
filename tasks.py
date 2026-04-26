@@ -1,6 +1,6 @@
 # tasks.py
 """
-25 hallucination detection samples across 3 difficulty levels.
+Curated hallucination detection samples across 5 difficulty levels.
 Every sample passes the 6-test checklist:
   1. Exact phrase pointable in llm_response
   2. Objective — numbers, names, dates only
@@ -1380,6 +1380,64 @@ TASKS: Dict[str, List[Dict[str, Any]]] = {
         },
     ],
 
+}
+
+
+_REAL_WORLD_FRAMES = [
+    {
+        "reference_type": "Policy Brief",
+        "response_type": "Model Policy Summary",
+        "source": "Public Affairs Desk",
+    },
+    {
+        "reference_type": "Clinical Note",
+        "response_type": "Model Clinical Summary",
+        "source": "Hospital Documentation Unit",
+    },
+    {
+        "reference_type": "Market Intelligence Memo",
+        "response_type": "Model Analyst Summary",
+        "source": "Strategy Research Group",
+    },
+    {
+        "reference_type": "Engineering Incident Report",
+        "response_type": "Model Incident Summary",
+        "source": "Reliability Operations",
+    },
+    {
+        "reference_type": "Science Desk Brief",
+        "response_type": "Model Science Summary",
+        "source": "Research Communications",
+    },
+]
+
+
+def _wrap_with_real_world_frame(task_id: str, idx: int, sample: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Keep deterministic grading fields unchanged while presenting text in realistic document style.
+    """
+    frame = _REAL_WORLD_FRAMES[idx % len(_REAL_WORLD_FRAMES)]
+    wrapped = dict(sample)
+
+    wrapped["reference_document"] = (
+        f"[{frame['reference_type']}] "
+        f"Source: {frame['source']} | Task: {task_id.upper()} | Record: {idx + 1}\n\n"
+        f"{sample['reference_document']}"
+    )
+    wrapped["llm_response"] = (
+        f"[{frame['response_type']}] "
+        f"Source text record {idx + 1}\n\n"
+        f"{sample['llm_response']}"
+    )
+    return wrapped
+
+
+TASKS = {
+    task_id: [
+        _wrap_with_real_world_frame(task_id, idx, sample)
+        for idx, sample in enumerate(samples)
+    ]
+    for task_id, samples in TASKS.items()
 }
 
 
