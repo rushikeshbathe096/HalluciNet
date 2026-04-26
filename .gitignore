@@ -11,3 +11,5 @@ build/
 adversarial_reward_curve.png
 adversarial_reward_curve.png
 *.png
+adversarial_reward_curve.png
+*.png
