@@ -58,42 +58,42 @@ That is the capability gap HalluciNet closes.
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                      HalluciNet — System Architecture                       ║
+║                      HalluciNet — System Architecture                        ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
 ║                                                                              ║
 ║  TASK LAYER                                                                  ║
-║  ┌──────────────────────────────────────────────────────────────────────┐   ║
-║  │  tasks.py           73 hand-curated samples                          │   ║
-║  │  easy(10) · medium(12) · hard(19) · expert(20) · adversarial(12)     │   ║
-║  │  sample_generator.py   ∞ programmatic samples (never memorisable)    │   ║
-║  └───────────────────────────────┬──────────────────────────────────────┘   ║
+║  ┌──────────────────────────────────────────────────────────────────────┐    ║
+║  │  tasks.py           73 hand-curated samples                          │    ║
+║  │  easy(10) · medium(12) · hard(19) · expert(20) · adversarial(12)     │    ║
+║  │  sample_generator.py   ∞ programmatic samples (never memorisable)    │    ║
+║  └───────────────────────────────┬──────────────────────────────────────┘    ║
 ║                                  │ reference_document + llm_response         ║
-║                    ┌─────────────┴──────────────┐                           ║
+║                    ┌─────────────┴──────────────┐                            ║
 ║                    ▼                            ▼                            ║
-║  ┌─────────────────────────┐   ┌──────────────────────────────────────┐     ║
-║  │     Generator Agent     │   │          Detector Agent              │     ║
-║  │  reads reference doc    │   │  reads reference + llm_response      │     ║
-║  │  injects one subtle     │   │  submits:                            │     ║
-║  │  factual error          │──▶│    has_hallucination  (bool)         │     ║
-║  │                         │   │    hallucinated_claim (exact phrase) │     ║
-║  │  7 error types:         │   │    correct_fact       (from ref)     │     ║
-║  │  · year_swap            │   │    confidence         [0.001, 0.999] │     ║
-║  │  · name_swap            │   └──────────────────┬───────────────────┘     ║
+║  ┌─────────────────────────┐   ┌──────────────────────────────────────┐      ║
+║  │     Generator Agent     │   │          Detector Agent              │      ║
+║  │  reads reference doc    │   │  reads reference + llm_response      │      ║
+║  │  injects one subtle     │   │  submits:                            │      ║
+║  │  factual error          │──▶│    has_hallucination  (bool)         │      ║
+║  │                         │   │    hallucinated_claim (exact phrase) │      ║
+║  │  7 error types:         │   │    correct_fact       (from ref)     │      ║
+║  │  · year_swap            │   │    confidence         [0.001, 0.999] │      ║
+║  │  · name_swap            │   └──────────────────┬───────────────────┘      ║
 ║  │  · number_swap          │                      │                          ║
 ║  │  · negation             │                      ▼                          ║
-║  │  · entity_flip          │   ┌──────────────────────────────────────┐     ║
-║  │  · unit_shift           │   │      Deterministic Grader            │     ║
-║  │  · partial_truth        │   │  detection    × 0.50                 │     ║
-║  │                         │   │  phrase ID    × 0.30  (trigram sim)  │     ║
-║  │  adapts based on        │   │  correct_fact × 0.20                 │     ║
-║  │  previous_caught signal │   │  calibration  ± 0.10  (additive)     │     ║
-║  └────────────┬────────────┘   │                                      │     ║
-║               │                │  anti-cheat: always-true  → ~0.30    │     ║
-║               │  generator     │              random       → ~0.39    │     ║
-║               │  reward =      │              calibrated   → 0.90+    │     ║
-║               │  f(not_caught) └──────────────────┬───────────────────┘     ║
+║  │  · entity_flip          │   ┌──────────────────────────────────────┐      ║
+║  │  · unit_shift           │   │      Deterministic Grader            │      ║
+║  │  · partial_truth        │   │  detection    × 0.50                 │      ║
+║  │                         │   │  phrase ID    × 0.30  (trigram sim)  │      ║
+║  │  adapts based on        │   │  correct_fact × 0.20                 │      ║
+║  │  previous_caught signal │   │  calibration  ± 0.10  (additive)     │      ║
+║  └────────────┬────────────┘   │                                      │      ║
+║               │                │  anti-cheat: always-true  → ~0.30    │      ║
+║               │  generator     │              random       → ~0.39    │      ║
+║               │  reward =      │              calibrated   → 0.90+    │      ║
+║               │  f(not_caught) └──────────────────┬───────────────────┘      ║
 ║               │                                   │ reward                   ║
-║               │           ┌───────────────────────┘                         ║
+║               │           ┌───────────────────────┘                          ║
 ║               │           │                                                  ║
 ║               ▼           ▼                                                  ║
 ║  ┌────────────────────────────────────────────────────────────────────┐      ║
@@ -103,41 +103,41 @@ That is the capability gap HalluciNet closes.
 ║  │                        │                                           │      ║
 ║  │                        ▼                                           │      ║
 ║  │              DebateCoordinator                                     │      ║
-║  │              checks: defense references response? (>20% overlap)  │      ║
+║  │              checks: defense references response? (>20% overlap)   │      ║
 ║  │              checks: defense contradicts ground truth?             │      ║
-║  │              ┌────────────────────┬──────────────────────┐        │      ║
+║  │              ┌────────────────────┬──────────────────────┐         │      ║
 ║  │              ▼                    ▼                       ▼        │      ║
-║  │        detector_wins        inconclusive          detector_wins   │      ║
-║  │        (defense admits      (genuine argument,    (weak / off-    │      ║
-║  │         ground truth)        no ground truth      topic defense)  │      ║
-║  │         Δ = −0.30            contradiction)        Δ = −0.15      │      ║
-║  │                              Δ = +0.10                            │      ║
+║  │        detector_wins        inconclusive          detector_wins    │      ║
+║  │        (defense admits      (genuine argument,    (weak / off-     │      ║
+║  │         ground truth)        no ground truth      topic defense)   │      ║
+║  │         Δ = −0.30            contradiction)        Δ = −0.15       │      ║
+║  │                              Δ = +0.10                             │      ║
 ║  └────────────────────────────────────────────────────────────────────┘      ║
-║                                    │                                          ║
-║                                    ▼                                          ║
+║                                    │                                         ║
+║                                    ▼                                         ║
 ║  ┌────────────────────────────────────────────────────────────────────┐      ║
 ║  │                      GOVERNANCE LAYER                              │      ║
 ║  │                                                                    │      ║
-║  │  ┌──────────────────┐  ┌──────────────────┐  ┌─────────────────┐  │      ║
-║  │  │  Oversight Agent │  │  ELO Tracker     │  │ Calibration     │  │      ║
-║  │  │                  │  │                  │  │ Tracker (ECE)   │  │      ║
-║  │  │  · blind spots   │  │  K = 32          │  │                 │  │      ║
-║  │  │    (≥3 consec.   │  │  Generator ELO   │  │  10 confidence  │  │      ║
-║  │  │    same-type     │  │  Detector ELO    │  │  bins, actual   │  │      ║
-║  │  │    failures)     │  │  updated every   │  │  accuracy per   │  │      ║
-║  │  │                  │  │  step            │  │  bin → ECE      │  │      ║
-║  │  │  · overconfidence│  └──────────────────┘  └─────────────────┘  │      ║
+║  │  ┌──────────────────┐  ┌──────────────────┐  ┌─────────────────┐   │      ║
+║  │  │  Oversight Agent │  │  ELO Tracker     │  │ Calibration     │   │      ║
+║  │  │                  │  │                  │  │ Tracker (ECE)   │   │      ║
+║  │  │  · blind spots   │  │  K = 32          │  │                 │   │      ║
+║  │  │    (≥3 consec.   │  │  Generator ELO   │  │  10 confidence  │   │      ║
+║  │  │    same-type     │  │  Detector ELO    │  │  bins, actual   │   │      ║
+║  │  │    failures)     │  │  updated every   │  │  accuracy per   │   │      ║
+║  │  │                  │  │  step            │  │  bin → ECE      │   │      ║
+║  │  │  · overconfidence│  └──────────────────┘  └─────────────────┘   │      ║
 ║  │  │    rate (conf    │                                              │      ║
-║  │  │    > 0.8 + wrong)│  ┌──────────────────────────────────────┐   │      ║
-║  │  │                  │  │      Curriculum Manager              │   │      ║
-║  │  │  · adversarial   │  │                                      │   │      ║
-║  │  │    injection     │  │  easy → medium → hard → expert →     │   │      ║
-║  │  │    trigger:      │  │                        adversarial   │   │      ║
-║  │  │    3× high-conf  │  │                                      │   │      ║
-║  │  │    wrong in a    │  │  promote: det_avg ≥ 0.75 over 3 sess │   │      ║
-║  │  │    row → force   │  │  promote: gen_avg ≥ 0.75 (gen wins)  │   │      ║
-║  │  │    adversarial   │  │  demote:  det_avg < 0.40 over 3 sess │   │      ║
-║  │  │    tier          │  └──────────────────────────────────────┘   │      ║
+║  │  │    > 0.8 + wrong)│  ┌──────────────────────────────────────┐    │      ║
+║  │  │                  │  │      Curriculum Manager              │    │      ║
+║  │  │  · adversarial   │  │                                      │    │      ║
+║  │  │    injection     │  │  easy → medium → hard → expert →     │    │      ║
+║  │  │    trigger:      │  │                        adversarial   │    │      ║
+║  │  │    3× high-conf  │  │                                      │    │      ║
+║  │  │    wrong in a    │  │  promote: det_avg ≥ 0.75 over 3 sess │    │      ║
+║  │  │    row → force   │  │  promote: gen_avg ≥ 0.75 (gen wins)  │    │      ║
+║  │  │    adversarial   │  │  demote:  det_avg < 0.40 over 3 sess │    │      ║
+║  │  │    tier          │  └──────────────────────────────────────┘    │      ║
 ║  │  └──────────────────┘                                              │      ║
 ║  │                                                                    │      ║
 ║  │  ┌──────────────────────────────────────────────────────────────┐  │      ║
