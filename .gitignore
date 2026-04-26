@@ -9,3 +9,5 @@ dist/
 build/
 .pytest_cache/
 adversarial_reward_curve.png
+adversarial_reward_curve.png
+*.png
