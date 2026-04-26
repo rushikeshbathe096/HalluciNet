@@ -7,15 +7,15 @@ sdk: docker
 pinned: false
 ---
 
-# 🔍 HalluciNet Adversarial
+# HalluciNet Adversarial
 ## Multi-Agent Self-Improving Hallucination Detection
 
 [![OpenEnv Compatible](https://img.shields.io/badge/OpenEnv-2.0-success)]()
 [![Theme 1: Multi-Agent](https://img.shields.io/badge/Theme-Multi--Agent-blue)]()
-[![Theme 4: Self-Improvement](https://img.shields.io/badge/Theme-Self--Improvement-purple)]()
 [![Theme 3: World Modeling](https://img.shields.io/badge/Theme-World--Modeling-orange)]()
-[![Halluminate Bonus](https://img.shields.io/badge/Bonus-Halluminate-red)]()
+[![Theme 4: Self-Improvement](https://img.shields.io/badge/Theme-Self--Improvement-purple)]()
 [![Fleet AI Bonus](https://img.shields.io/badge/Bonus-Fleet--AI-orange)]()
+[![Halluminate Bonus](https://img.shields.io/badge/Bonus-Halluminate-red)]()
 
 > **"We didn't train a model to be right.  
 > We trained it to know when it might be wrong.  
@@ -23,222 +23,324 @@ pinned: false
 
 ---
 
-## 🔗 Links
+## Links
 
 | Resource | Link |
 |---|---|
 | 🤗 **Live Environment** | https://rushikeshbathe096-hallucinet.hf.space |
 | 💻 **GitHub** | https://github.com/rushikeshbathe096/HalluciNet |
-| 📓 **GRPO Training Colab** | [Open in Colab](https://colab.research.google.com/drive/1vrqo8CFXBYJi3lHaFJWVQSPgcw9B34rz?usp=sharing) |
+| 📓 **GRPO Training Colab** | [Open in Colab](https://colab.research.google.com/drive/1hZ3UVzNT1Fug-59Iea5JcU7BvQDoUe_C?usp=sharing) |
 | 📝 **Training Details** | [TRAINING.md](./TRAINING.md) |
 | 📝 **Blog Post** | [blog.md](./blog.md) |
+| 📊 **Presentation** | [View Slides](https://drive.google.com/file/d/1rF3PIdZogXNoPC9KYRVGZ3aG60jG5m3M/view?usp=sharing) |
 | 🔁 **Round 1 Environment** | https://rushikeshbathe096-hallucination-detector.hf.space |
 
 ---
 
-## 1. The Problem
+## The Problem
 
 LLMs hallucinate. Everyone knows this.
 
-The real problem is not that they are wrong.  
-The real problem is that they are **confidently wrong.**
+The real problem is not that they are wrong — it's that they are **confidently wrong.**
 
 > *"The Eiffel Tower was completed in 1902, two years after the Paris Exposition."*  
-> Confidence: 0.94
+> ← Completely false. Delivered at 0.94 confidence.
 
-That sentence sounds authoritative. It is completely wrong.  
-The Eiffel Tower was completed in 1889.
+A model that produces this with 0.94 confidence is not just incorrect — it is dangerous. In healthcare, legal, and financial AI, confident wrong answers cause real harm.
 
-A model that produces this with 0.94 confidence is not just incorrect —  
-it is dangerous. In healthcare, legal, and financial AI, confident wrong  
-answers cause real harm.
-
-**Current benchmarks test correctness.**  
-**Nobody trains models to know when they might be wrong.**
+Current benchmarks test correctness. Nobody trains models to know **when they might be wrong.**
 
 That is the capability gap HalluciNet closes.
 
 ---
 
-## 2. The Environment
-
-Three agents. One adversarial loop. Four difficulty tiers.
+## Architecture
 
 ```
-[Reference Document]
-        │
-        ▼
-[Generator Agent] ──── creates subtle hallucination
-        │
-        ▼
-[Hallucinated Response]
-        │
-        ▼
-[Detector Agent] ──── flags it, quotes exact wrong phrase,
-        │              states correct fact, assigns confidence
-        │
-   ┌────┴────┐
-   │         │
- Caught     Missed
-   │         │
-   ▼         ▼
-[Debate]  [Generator Reward+]
-   │
-   ▼
-[Oversight Agent] ──── monitors patterns, flags blind spots
-   │
-   ▼
-[Curriculum Manager] ── escalates difficulty when reliable
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                      HalluciNet — System Architecture                       ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║                                                                              ║
+║  TASK LAYER                                                                  ║
+║  ┌──────────────────────────────────────────────────────────────────────┐   ║
+║  │  tasks.py           73 hand-curated samples                          │   ║
+║  │  easy(10) · medium(12) · hard(19) · expert(20) · adversarial(12)     │   ║
+║  │  sample_generator.py   ∞ programmatic samples (never memorisable)    │   ║
+║  └───────────────────────────────┬──────────────────────────────────────┘   ║
+║                                  │ reference_document + llm_response         ║
+║                    ┌─────────────┴──────────────┐                           ║
+║                    ▼                            ▼                            ║
+║  ┌─────────────────────────┐   ┌──────────────────────────────────────┐     ║
+║  │     Generator Agent     │   │          Detector Agent              │     ║
+║  │  reads reference doc    │   │  reads reference + llm_response      │     ║
+║  │  injects one subtle     │   │  submits:                            │     ║
+║  │  factual error          │──▶│    has_hallucination  (bool)         │     ║
+║  │                         │   │    hallucinated_claim (exact phrase) │     ║
+║  │  7 error types:         │   │    correct_fact       (from ref)     │     ║
+║  │  · year_swap            │   │    confidence         [0.001, 0.999] │     ║
+║  │  · name_swap            │   └──────────────────┬───────────────────┘     ║
+║  │  · number_swap          │                      │                          ║
+║  │  · negation             │                      ▼                          ║
+║  │  · entity_flip          │   ┌──────────────────────────────────────┐     ║
+║  │  · unit_shift           │   │      Deterministic Grader            │     ║
+║  │  · partial_truth        │   │  detection    × 0.50                 │     ║
+║  │                         │   │  phrase ID    × 0.30  (trigram sim)  │     ║
+║  │  adapts based on        │   │  correct_fact × 0.20                 │     ║
+║  │  previous_caught signal │   │  calibration  ± 0.10  (additive)     │     ║
+║  └────────────┬────────────┘   │                                      │     ║
+║               │                │  anti-cheat: always-true  → ~0.30    │     ║
+║               │  generator     │              random       → ~0.39    │     ║
+║               │  reward =      │              calibrated   → 0.90+    │     ║
+║               │  f(not_caught) └──────────────────┬───────────────────┘     ║
+║               │                                   │ reward                   ║
+║               │           ┌───────────────────────┘                         ║
+║               │           │                                                  ║
+║               ▼           ▼                                                  ║
+║  ┌────────────────────────────────────────────────────────────────────┐      ║
+║  │                    DEBATE ROUND  (if hallucination flagged)        │      ║
+║  │                                                                    │      ║
+║  │   Generator ──▶  submits defense (natural language argument)       │      ║
+║  │                        │                                           │      ║
+║  │                        ▼                                           │      ║
+║  │              DebateCoordinator                                     │      ║
+║  │              checks: defense references response? (>20% overlap)  │      ║
+║  │              checks: defense contradicts ground truth?             │      ║
+║  │              ┌────────────────────┬──────────────────────┐        │      ║
+║  │              ▼                    ▼                       ▼        │      ║
+║  │        detector_wins        inconclusive          detector_wins   │      ║
+║  │        (defense admits      (genuine argument,    (weak / off-    │      ║
+║  │         ground truth)        no ground truth      topic defense)  │      ║
+║  │         Δ = −0.30            contradiction)        Δ = −0.15      │      ║
+║  │                              Δ = +0.10                            │      ║
+║  └────────────────────────────────────────────────────────────────────┘      ║
+║                                    │                                          ║
+║                                    ▼                                          ║
+║  ┌────────────────────────────────────────────────────────────────────┐      ║
+║  │                      GOVERNANCE LAYER                              │      ║
+║  │                                                                    │      ║
+║  │  ┌──────────────────┐  ┌──────────────────┐  ┌─────────────────┐  │      ║
+║  │  │  Oversight Agent │  │  ELO Tracker     │  │ Calibration     │  │      ║
+║  │  │                  │  │                  │  │ Tracker (ECE)   │  │      ║
+║  │  │  · blind spots   │  │  K = 32          │  │                 │  │      ║
+║  │  │    (≥3 consec.   │  │  Generator ELO   │  │  10 confidence  │  │      ║
+║  │  │    same-type     │  │  Detector ELO    │  │  bins, actual   │  │      ║
+║  │  │    failures)     │  │  updated every   │  │  accuracy per   │  │      ║
+║  │  │                  │  │  step            │  │  bin → ECE      │  │      ║
+║  │  │  · overconfidence│  └──────────────────┘  └─────────────────┘  │      ║
+║  │  │    rate (conf    │                                              │      ║
+║  │  │    > 0.8 + wrong)│  ┌──────────────────────────────────────┐   │      ║
+║  │  │                  │  │      Curriculum Manager              │   │      ║
+║  │  │  · adversarial   │  │                                      │   │      ║
+║  │  │    injection     │  │  easy → medium → hard → expert →     │   │      ║
+║  │  │    trigger:      │  │                        adversarial   │   │      ║
+║  │  │    3× high-conf  │  │                                      │   │      ║
+║  │  │    wrong in a    │  │  promote: det_avg ≥ 0.75 over 3 sess │   │      ║
+║  │  │    row → force   │  │  promote: gen_avg ≥ 0.75 (gen wins)  │   │      ║
+║  │  │    adversarial   │  │  demote:  det_avg < 0.40 over 3 sess │   │      ║
+║  │  │    tier          │  └──────────────────────────────────────┘   │      ║
+║  │  └──────────────────┘                                              │      ║
+║  │                                                                    │      ║
+║  │  ┌──────────────────────────────────────────────────────────────┐  │      ║
+║  │  │  World Model  /world/model  (Theme 3)                        │  │      ║
+║  │  │  synthesises Oversight + Curriculum + ELO + Calibration →    │  │      ║
+║  │  │  agent_model · environment_model · predicted_next_action     │  │      ║
+║  │  └──────────────────────────────────────────────────────────────┘  │      ║
+║  └────────────────────────────────────────────────────────────────────┘      ║
+║                                                                              ║
+║  TRANSPORT                                                                   ║
+║  FastAPI · REST (HTTP) + WebSocket · OpenEnv 2.0 · Docker · HF Spaces        ║
+╚══════════════════════════════════════════════════════════════════════════════╝
 ```
-
-**What the agent sees:**
-- Reference document (ground truth)
-- LLM response (may contain hallucination)
-
-**What the agent does:**
-- Decides: hallucination present or clean?
-- Quotes: exact wrong phrase from the response
-- States: correct fact from the reference
-- Assigns: calibrated confidence (0–1)
-
-**What the agent gets rewarded for:**
-
-| Component | Weight | What It Measures |
-|---|---:|---|
-| Hallucination detection | 0.50 | Did it catch the error? |
-| Exact phrase identification | 0.30 | Can it quote what's wrong? |
-| Correct fact stated | 0.20 | Does it know the truth? |
-| Confidence calibration | ±0.10 | Does it know what it knows? |
-
-**Hard to game:**  
-Adversarial clean samples penalize detectors that flag everything.  
-A detector with 100% recall but poor precision scores low.
-
-**The Debate Round (unique to HalluciNet):**  
-When the Detector flags a hallucination, the Generator gets one  
-defense turn. The Detector re-evaluates. Ground truth adjudicates.  
-Agents don't just compete — they argue.
-
-**Five difficulty tiers:**
-
-| Task | Samples | Challenge |
-|---|---:|---|
-| Easy | 10 | Year swaps, obvious number changes |
-| Medium | 12 | Name swaps, location errors |
-| Hard | 19 | Negation traps, entity flips, adversarial clean |
-| Expert | 20 | Multi-hop reasoning, date arithmetic |
-| Adversarial | 12 | Research-grade misleading framing |
 
 ---
 
-## 3. Results
+## The Grader — Anti-Cheat Design
 
-### Before vs After Training
+Every reward signal flows through a single deterministic function in `grader.py`. No LLM judge. No fuzzy scoring.
 
-**BEFORE training (untrained Qwen2.5-3B):**
+| Component | Weight | What it checks |
+|---|---:|---|
+| Hallucination detection | 0.50 | Binary call: present or clean |
+| Phrase identification | 0.30 | Exact wrong phrase (trigram + keyword + number matching) |
+| Correct fact | 0.20 | What the reference document actually says |
+| Confidence calibration | ±0.10 | Right + confident → bonus. Wrong + confident → penalty |
+
+**Shortcut resistance:**
+
+| Strategy | Expected score |
+|---|---:|
+| Always-True (flag everything) | ~0.30 |
+| Always-False (never flag) | ~0.25 |
+| Random | ~0.39 |
+| Correct + calibrated | **0.90+** |
+
+---
+
+## Task Tiers
+
+| Task | Samples | Challenge type |
+|---|---:|---|
+| Easy | 10 | Year swaps, obvious number and location changes |
+| Medium | 12 | Multiple simultaneous errors, digit transpositions |
+| Hard | 19 | Negation traps, entity-role reversals, unit shifts, adversarial-clean traps |
+| Expert | 20 | Multi-hop reasoning, financial math, legal qualifiers, thermodynamics |
+| Adversarial | 12 | Correct facts + fabricated inference — the hallucination is invisible |
+
+**Adversarial-clean samples** appear across every tier: responses that *sound* wrong but are factually correct (Monty Hall, Venus day/year, birthday problem). False positives on these are penalized.
+
+---
+
+## Results
+
+### Before vs After GRPO Training
+
+**Before (base Qwen2.5-3B, Medium task):**
 ```
-Input:    "The Eiffel Tower was completed in 1902 in Paris, France."
-Reference: "...completed in 1889..."
-Agent:    has_hallucination = False
-          confidence = 0.71
-Result:   ❌ MISSED — confidently wrong about being right
+has_hallucination = False    ← missed it
+confidence        = 0.71     ← confidently wrong
+score             = 0.001
 ```
 
-**AFTER GRPO training (same model, same input):**
+**After (GRPO-trained, same input):**
 ```
-Input:    "The Eiffel Tower was completed in 1902 in Paris, France."
-Reference: "...completed in 1889..."
-Agent:    has_hallucination = True
-          hallucinated_claim = "completed in 1902"
-          correct_fact = "completed in 1889"
-          confidence = 0.91
-Result:   ✅ CAUGHT — quoted exact wrong phrase, stated correct fact
+has_hallucination  = True
+hallucinated_claim = "completed in 1902"
+correct_fact       = "completed in 1889"
+confidence         = 0.91
+score              = 0.940    ← EXCELLENT
 ```
 
-This is learned behavior. Not hardcoded logic.
+### Benchmark
 
-### Multi-Model Benchmark
+| Model | Params | Easy | Medium | Hard | Method |
+|---|---:|---:|---:|---:|---|
+| Qwen2.5-3B (base) | 3B | 0.454 | 0.375 | — | Zero-shot |
+| TinyLlama-1.1B | 1.1B | 0.556 | 0.639 | — | Zero-shot |
+| llama-3.1-8b-instant | 8B | 0.800 | 0.800 | — | Zero-shot |
+| **Qwen2.5-3B-GRPO** | **3B** | **0.647** | **0.774** | **0.729** | **GRPO + LoRA** |
 
-| Model | Params | Easy | Medium | Hard | Trained? |
-|---|---:|---:|---:|---:|:---:|
-| Qwen2.5-3B (base) | 3B | 0.454 | 0.375 | — | ❌ |
-| TinyLlama-1.1B | 1.1B | 0.556 | 0.639 | — | ❌ |
-| **Qwen2.5-3B-GRPO** | **3B** | **0.647** | **0.774** | **0.729** | ✅ |
-| llama-3.1-8b-instant | 8B | 0.800 | 0.800 | — | ❌ |
-
-Key insight: our GRPO-trained 3B model reaches **Hard task capability**  
-that the untrained 3B model cannot attempt at all.  
-It outperforms llama-3.1-8b on Medium while being **2.7× smaller.**
-
-### Improvement Summary
+The trained 3B model **acquires Hard-task capability** that the base 3B cannot attempt, and **outperforms the 8B model on Medium** while being 2.7× smaller.
 
 | Task | Baseline | Trained | Improvement |
 |---|---:|---:|---:|
-| Easy | 0.454 | 0.647 | **+42.5%** |
+| Easy | 0.454 | 0.647 | +42.5% |
 | Medium | 0.375 | 0.774 | **+106.4%** |
-| Hard | 0.000 | 0.729 | **New capability** |
-| Overall (GRPO run) | 0.674 | 0.751 | **+11.4%** |
+| Hard | — | 0.729 | **New capability** |
 
-### What The Model Learned
-
-Through GRPO training the model acquired five specific capabilities:
-
-1. **Structured output discipline** — consistently produces valid JSON
-2. **Phrase grounding** — locates exact wrong claim, not vague assertions
-3. **Correction accuracy** — states what reference actually says
-4. **Confidence calibration** — reports lower confidence when uncertain
-5. **Clean sample resistance** — resists false positives on adversarial-clean samples
-
-This is learned behavior. Not hardcoded logic.
-
----
-
-## 4. Why It Matters
-
-Every AI system deployed in healthcare, legal, or finance needs  
-exactly this capability — a model that says *"I'm not sure"*  
-when it is not sure.
-
-Not because we told it to be honest.  
-Because the environment made dishonesty unprofitable.
-
-**Who cares:**
-- AI safety researchers building evaluation benchmarks
-- Teams deploying LLMs in high-stakes domains
-- Anyone building systems where confident wrong answers cause harm
-
-**Could a researcher write a paper on this?**  
-Yes. Calibrated uncertainty in LLM outputs is an active research area.  
-HalluciNet is the first RL training environment specifically targeting  
-confidence calibration through adversarial self-play.
+Curriculum logged **19 promotions across 90 training sessions**, stabilising at the Hard tier — the environment working as designed.
 
 ---
 
 ## Monitoring & Governance
 
-| Component | File | What It Does |
+| Component | File | What it does |
 |---|---|---|
-| ELO Rating | `server/elo.py` | Tracks Generator vs Detector skill like chess |
-| Calibration (ECE) | `server/calibration.py` | Confidence vs accuracy alignment |
+| ELO Rating | `server/elo.py` | Generator vs Detector chess-style rating, K=32 |
+| Calibration (ECE) | `server/calibration.py` | Confidence vs accuracy in 10 bins |
 | Leaderboard | `server/leaderboard.py` | Any model can be benchmarked live |
-| Oversight Agent | `server/oversight_agent.py` | Detects blind spots, overconfidence |
-| Debate Validator | `server/debate_coordinator.py` | Adjudicates Generator defense turns |
-| Curriculum Manager | `curriculum.py` | Promotes difficulty when system reliable |
+| Oversight Agent | `server/oversight_agent.py` | Blind spots, overconfidence, adversarial injection |
+| Debate Coordinator | `server/debate_coordinator.py` | Adjudicates Generator defense turns |
+| Curriculum Manager | `curriculum.py` | Promotes/demotes difficulty on 3-session window |
+| World Model | `server/app.py /world/model` | Synthesises all governance into agent + env model |
 
 ---
 
-## Quick Start
+## Running Locally — Step by Step
+
+Follow in order. Assumes Python 3.10+ installed.
+
+**Step 1 — Clone**
+```bash
+git clone https://github.com/rushikeshbathe096/HalluciNet.git
+cd HalluciNet
+```
+
+**Step 2 — Create and activate virtual environment**
+```bash
+python3 -m venv venv
+
+# macOS / Linux
+source venv/bin/activate
+
+# Windows
+venv\Scripts\activate
+```
+You should see `(venv)` in your prompt.
+
+**Step 3 — Install dependencies**
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+pip install -r server/requirements.txt
+```
+
+**Step 4 — Set up environment variables**
+```bash
+cp .env.example .env
+```
+Open `.env` and fill in:
+```
+GROQ_API_KEY=gsk_your_key_here    # free at console.groq.com
+API_BASE_URL=https://api.groq.com/openai/v1
+MODEL_NAME=llama-3.1-8b-instant
+```
+> The server (FastAPI + grader + environment) works **without any key**. The key is only needed to run `inference.py` (adversarial self-play).
+
+**Step 5 — Start the server**
+```bash
+python -m uvicorn server.app:app --host 0.0.0.0 --port 7860 --reload
+```
+Expected output:
+```
+INFO:     Uvicorn running on http://0.0.0.0:7860 (Press CTRL+C to quit)
+```
+
+**Step 6 — Open the UI**
+
+Go to **http://localhost:7860** — pick a difficulty tier, load a sample, play as Detector or Generator, see your score broken down live.
+
+**Step 7 — Sanity check the grader (optional)**
+```bash
+python grader.py
+# ✓ All 10 grader tests passed.
+```
+
+**Step 8 — Run adversarial self-play (optional, needs GROQ_API_KEY)**
+```bash
+python inference.py
+# Runs 6 sessions, logs rewards, saves adversarial_results.csv
+```
+
+---
+
+## Running with Docker
 
 ```bash
-# Test live environment
-curl https://rushikeshbathe096-hallucinet.hf.space/health
+docker build -t hallucinet:latest .
+docker run -p 7860:7860 hallucinet:latest
+# Server at http://localhost:7860
+```
 
-# Run a detector episode
-curl -X POST https://rushikeshbathe096-hallucinet.hf.space/reset \
+---
+
+## Quick Check — Verify the Live Environment
+
+The environment is deployed at `https://rushikeshbathe096-hallucinet.hf.space`.  
+Commands below cover every major feature. Each pipes through `python3 -m json.tool` so the response is readable.
+
+```bash
+BASE=https://rushikeshbathe096-hallucinet.hf.space
+
+# 1. Health  →  {"status":"healthy","mode":"adversarial","version":"2.0"}
+curl -s $BASE/health
+
+# 2. Start a Hard episode  →  returns reference_document + llm_response
+curl -s -X POST $BASE/reset \
   -H "Content-Type: application/json" \
-  -d '{"task_id": "hard"}'
+  -d '{"task_id": "hard"}' | python3 -m json.tool
 
-curl -X POST https://rushikeshbathe096-hallucinet.hf.space/step \
+# 3. Submit a detection  →  returns score, reward, breakdown {detection,phrase,fact,calibration}
+curl -s -X POST $BASE/step \
   -H "Content-Type: application/json" \
   -d '{
     "action": {
@@ -247,67 +349,68 @@ curl -X POST https://rushikeshbathe096-hallucinet.hf.space/step \
       "correct_fact": "completed in 1889",
       "confidence": 0.95
     }
-  }'
+  }' | python3 -m json.tool
 
-# Check ELO standings
-curl https://rushikeshbathe096-hallucinet.hf.space/elo/standings
+# 4. Debate round  →  generator defends, DebateCoordinator adjudicates
+curl -s -X POST $BASE/debate \
+  -H "Content-Type: application/json" \
+  -d '{"generator_defense": "My response is supported by the source document."}' \
+  | python3 -m json.tool
 
-# Check leaderboard
-curl https://rushikeshbathe096-hallucinet.hf.space/leaderboard
+# 5. Oversight  →  reliability_score, blind_spots, overconfidence_rate
+curl -s $BASE/oversight/status | python3 -m json.tool
+
+# 6. Curriculum  →  current_task, detector_avg, next_promotion condition
+curl -s $BASE/curriculum/status | python3 -m json.tool
+
+# 7. World Model (Theme 3)  →  agent_model + environment_model + predicted_next_action
+curl -s $BASE/world/model | python3 -m json.tool
+
+# 8. ELO standings  →  generator_elo, detector_elo, current_leader
+curl -s $BASE/elo/standings | python3 -m json.tool
+
+# 9. Calibration  →  ECE value, 10 confidence bins with actual accuracy per bin
+curl -s $BASE/calibration | python3 -m json.tool
+
+# 10. Leaderboard  →  all recorded model scores across all tiers
+curl -s $BASE/leaderboard | python3 -m json.tool
+
+# 11. Training summary  →  GRPO before/after numbers, curriculum promotions
+curl -s $BASE/training/summary | python3 -m json.tool
+
+# 12. OpenEnv validation
+openenv validate --url $BASE
 ```
+
+> **No terminal?** Paste any GET URL directly into your browser.  
+> **Swagger UI** (all endpoints, interactive): `https://rushikeshbathe096-hallucinet.hf.space/docs`
 
 ---
 
 ## API Reference
 
 ### Core
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/health` | Health check |
-| POST | `/reset` | Start detector episode |
-| POST | `/step` | Submit detector action |
-| GET | `/state` | Current episode state |
-| POST | `/generator/reset` | Start generator episode |
-| POST | `/generator/step` | Submit generator action |
+| Method | Endpoint | Body / Params | Description |
+|---|---|---|---|
+| GET | `/health` | — | Liveness check |
+| POST | `/reset` | `{"task_id": "easy\|medium\|hard\|expert\|adversarial"}` | Start detector episode |
+| POST | `/step` | `{"action": {has_hallucination, hallucinated_claim, correct_fact, confidence}}` | Submit detection |
+| GET | `/state` | — | Current episode state |
+| POST | `/generator/reset` | `{"task_id": "..."}` | Start generator episode |
+| POST | `/generator/step` | `{"action": {generated_response, error_type, confidence}}` | Submit hallucination |
 
 ### Governance
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/debate` | Generator defense turn |
-| GET | `/oversight/status` | System reliability score |
-| GET | `/curriculum/status` | Current difficulty level |
-| GET | `/world/model` | World model — Theme 3 |
-| GET | `/training/summary` | GRPO training results |
-| GET | `/elo/standings` | Agent ELO ratings |
-| GET | `/calibration` | ECE calibration curve |
-| GET | `/leaderboard` | Multi-model benchmark |
-| POST | `/leaderboard/record` | Submit model scores |
-
----
-
-## Repo Structure
-
-```
-HalluciNet/
-├── models.py                   # Pydantic schemas
-├── tasks.py                    # 73+ curated samples across 5 tiers
-├── grader.py                   # Deterministic 4-component grader
-├── curriculum.py               # Adaptive difficulty manager
-├── adversarial_coordinator.py  # Generator vs Detector loop
-├── inference.py                # Self-play training simulation
-├── openenv.yaml                # OpenEnv 2.0 manifest
-├── leaderboard.json            # Persisted benchmark scores
-├── TRAINING.md                 # GRPO training documentation
-└── server/
-    ├── app.py                  # FastAPI — 20+ endpoints + UI
-    ├── environment.py          # Detector RL environment
-    ├── generator_environment.py
-    ├── debate_coordinator.py
-    ├── oversight_agent.py
-    ├── leaderboard.py
-    ├── calibration.py
-    └── elo.py
-```
+| POST | `/debate` | Generator defense turn — `{"generator_defense": "..."}` |
+| GET | `/oversight/status` | Reliability score, blind spots, overconfidence rate |
+| GET | `/curriculum/status` | Current difficulty tier, sessions, promotion progress |
+| GET | `/world/model` | Full agent + environment model (Theme 3) |
+| GET | `/training/summary` | GRPO before/after numbers |
+| GET | `/elo/standings` | Generator vs Detector ELO ratings |
+| GET | `/calibration` | ECE calibration curve (10 bins) |
+| GET | `/leaderboard` | Recorded model scores across all tiers |
+| POST | `/leaderboard/record` | `{"model_name", "task_id", "score", "trained"}` |
 
 ---
 
@@ -317,37 +420,47 @@ HalluciNet/
 openenv validate --verbose
 # [OK] HalluciNet: Ready for multi-mode deployment
 # [YES] docker
-# [YES] openenv_serve  
+# [YES] openenv_serve
 # [YES] uv_run
 # [YES] python_module
 ```
 
-Both `HallucinationEnvironment` and `GeneratorEnvironment` inherit  
-from `openenv.core.Environment` with proper `reset()`, `step()`,  
-`state()` implementations.
+Both `HallucinationEnvironment` and `GeneratorEnvironment` inherit from `openenv.core.Environment` with correct `reset()`, `step()`, and `state()` implementations. Concurrent WebSocket sessions supported.
+
+### Full Submission Validator
+
+Runs 10 checks end-to-end: HF Space health, all 5 task tiers, new endpoints (debate/oversight/leaderboard), openenv validate, Docker build, local imports, task counts, grader self-tests, secret check, README links.
+
+```bash
+# Make executable, then run — HF Space URL is already hardcoded inside
+chmod +x final_validate.sh
+./final_validate.sh
+
+# Expected final output:
+# ========================================
+# SUMMARY: 18 passed, 0 failed
+# 🎉 ALL CHECKS PASSED — READY TO SUBMIT
+# ========================================
+```
 
 ---
 
 ## Training
 
-Full GRPO training documentation: [TRAINING.md](./TRAINING.md)
-
-**Base model:** `unsloth/Qwen2.5-3B-Instruct` (4-bit quantized)  
-**Method:** GRPO via `trl.GRPOTrainer` + LoRA (rank 16)  
-**Reward:** HalluciNet deterministic grader (same as environment)  
+**Base model:** `unsloth/Qwen2.5-3B-Instruct` (4-bit QLoRA)  
+**Method:** GRPO via `trl.GRPOTrainer` + LoRA rank 16  
+**Reward:** `grader.py` — same deterministic function used in the environment  
 **Platform:** Google Colab T4 GPU  
-**Notebook:** [Open in Colab](https://colab.research.google.com/drive/1vrqo8CFXBYJi3lHaFJWVQSPgcw9B34rz?usp=sharing)
+**Notebook:** [Open in Colab](https://colab.research.google.com/drive/1hZ3UVzNT1Fug-59Iea5JcU7BvQDoUe_C?usp=sharing)  
+**Full details:** [TRAINING.md](./TRAINING.md)
 
-The training pipeline validates the environment design end-to-end.  
-The grader's deterministic reward enables stable GRPO training.  
+The grader's deterministic reward enables stable GRPO training without a reward model.  
 The curriculum provides automatic difficulty scheduling during RL.  
-The multi-signal reward trains all aspects simultaneously.
+The multi-signal reward trains detection + phrase grounding + calibration simultaneously.
 
-**The environment was designed for RL training.  
-The GRPO results prove it works.**
+**The environment was designed for RL training. The GRPO results prove it works.**
 
 ---
 
 Built for Meta PyTorch OpenEnv Hackathon × Scaler 2026  
-**Team TLE** — Abeer Nikhil Sane · Shreyas Shringare · Rushikesh Bathe  
-SPIT Mumbai
+**Team TLE** — Abeer Nikhil Sane · Shreyas Shringare · Rushikesh Bathe · SPIT Mumbai
