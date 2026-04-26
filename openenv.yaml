@@ -6,7 +6,7 @@ description: >
   Generator agent creates subtle hallucinations.
   Detector agent learns to catch them.
   Adaptive curriculum escalates difficulty as both agents improve.
-  Theme 1: Multi-Agent | Theme 4: Self-Improvement
+  Theme 1: Multi-Agent | Theme 3: World Modeling | Theme 4: Self-Improvement
 
 author: "team-tle"
 

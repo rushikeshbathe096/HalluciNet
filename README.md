@@ -13,6 +13,7 @@ pinned: false
 [![OpenEnv Compatible](https://img.shields.io/badge/OpenEnv-2.0-success)]()
 [![Theme 1: Multi-Agent](https://img.shields.io/badge/Theme-Multi--Agent-blue)]()
 [![Theme 4: Self-Improvement](https://img.shields.io/badge/Theme-Self--Improvement-purple)]()
+[![Theme 3: World Modeling](https://img.shields.io/badge/Theme-World--Modeling-orange)]()
 
 HalluciNet is an adversarial RL-style environment where a **Generator** creates subtle hallucinations and a **Detector** learns to catch them with calibrated confidence.
 

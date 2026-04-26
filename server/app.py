@@ -69,12 +69,14 @@ def step(body: DetectorStepRequest):
     obs = detector_env.step(body.action)
     try:
         oversight_agent.record_episode({
+            "episode_id": detector_env._episode_id,
             "error_type": detector_env._samples[max(0, detector_env._index-1)].get("error_type", "unknown") if detector_env._samples else "unknown",
             "detector_confidence": body.action.confidence,
             "detector_correct": (obs.score or 0) > 0.5,
             "generator_confidence": 0.5,
             "generator_won": (obs.score or 0) < 0.3,
-            "task_id": detector_env._task_id
+            "task_id": detector_env._task_id,
+            "step": detector_env._steps
         })
     except Exception as e:
         print(f"[OVERSIGHT ERROR] {e}")
@@ -141,7 +143,7 @@ def adversarial_info():
             }
         },
         "tasks": ["easy", "medium", "hard", "expert", "adversarial"],
-        "themes": ["Theme 1: Multi-Agent", "Theme 4: Self-Improvement"]
+        "themes": ["Theme 1: Multi-Agent", "Theme 3: World Modeling", "Theme 4: Self-Improvement"]
     }
 
 @app.get("/leaderboard")
@@ -346,6 +348,7 @@ def demo_ui():
     <span class="badge badge-blue">Theme 1: Multi-Agent</span>
     <span class="badge badge-purple">Theme 4: Self-Improvement</span>
     <span class="badge badge-green">OpenEnv 2.0 ✓</span>
+    <span class="badge badge-purple">Theme 3: World Modeling ✓</span>
   </div>
 </div>
 
@@ -373,6 +376,7 @@ def demo_ui():
     <button class="tab" onclick="showTab('leaderboard')">🏆 Leaderboard</button>
     <button class="tab" onclick="showTab('api')">⚡ API</button>
     <button class="tab" onclick="showTab('oversight')">👁 Oversight</button>
+    <button class="tab" onclick="showTab('worldmodel')">🌍 World Model</button>
   </div>
 
   <!-- DEMO TAB -->
@@ -565,6 +569,14 @@ def demo_ui():
     </div>
   </div>
 
+  <!-- WORLD MODEL TAB -->
+  <div id="tab-worldmodel" class="hidden">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:16px">🌍 World Model — Theme 3</div>
+      <div id="worldmodel-content" style="color:#555;text-align:center;padding:20px">Loading...</div>
+    </div>
+  </div>
+
   <!-- OVERSIGHT TAB -->
   <div id="tab-oversight" class="hidden">
     <div class="card">
@@ -585,7 +597,7 @@ function selectTask(el, task) {
 }
 
 function showTab(name) {
-  ["demo","leaderboard","api","oversight"].forEach(t => {
+  ["demo","leaderboard","api","oversight","worldmodel"].forEach(t => {
     document.getElementById("tab-"+t).classList.add("hidden");
   });
   document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
@@ -593,6 +605,7 @@ function showTab(name) {
   event.target.classList.add("active");
   if (name === "leaderboard") loadLeaderboard();
   if (name === "oversight") loadOversight();
+  if (name === "worldmodel") loadWorldModel();
 }
 
 async function loadSample() {
@@ -755,6 +768,38 @@ async function loadOversight() {
   }
 }
 
+async function loadWorldModel() {
+  try {
+    const r = await fetch("/world/model");
+    const d = await r.json();
+    const am = d.agent_model || {};
+    const em = d.environment_model || {};
+    document.getElementById("worldmodel-content").innerHTML = `
+      <div style="font-size:13px;font-weight:600;color:#00aaff;margin-bottom:16px">
+        ${d.description}
+      </div>
+      <div class="section-title" style="margin-bottom:8px">Agent Model</div>
+      <div class="info-row"><span class="info-key">Detector Reliability</span><span class="info-val">${(am.detector_reliability||0).toFixed(3)}</span></div>
+      <div class="info-row"><span class="info-key">Overconfidence Rate</span><span class="info-val">${(am.overconfidence_rate||0).toFixed(3)}</span></div>
+      <div class="info-row"><span class="info-key">Calibration Error (ECE)</span><span class="info-val">${(am.calibration_error||0).toFixed(4)} — ${am.calibration_interpretation||"N/A"}</span></div>
+      <div class="info-row"><span class="info-key">Blind Spots</span><span class="info-val">${am.detector_blind_spots?.length ? am.detector_blind_spots.join(", ") : "None detected"}</span></div>
+      <div class="info-row"><span class="info-key">Episodes Monitored</span><span class="info-val">${am.episodes_monitored||0}</span></div>
+      <div class="section-title" style="margin:16px 0 8px">Environment Model</div>
+      <div class="info-row"><span class="info-key">Current Difficulty</span><span class="info-val">${em.current_difficulty||"—"}</span></div>
+      <div class="info-row"><span class="info-key">Detector ELO</span><span class="info-val">${em.detector_elo||1000}</span></div>
+      <div class="info-row"><span class="info-key">Generator ELO</span><span class="info-val">${em.generator_elo||1000}</span></div>
+      <div class="info-row"><span class="info-key">Total Rounds</span><span class="info-val">${em.total_rounds||0}</span></div>
+      <div class="section-title" style="margin:16px 0 8px">Predicted Next Action</div>
+      <div class="verdict ${d.predicted_next_action === "inject_adversarial_sample" ? "verdict-lose" : "verdict-win"}" style="margin:0">
+        ${d.predicted_next_action === "inject_adversarial_sample" ? "⚠️ Injecting adversarial sample — overconfidence detected" : "✅ Continue current difficulty — system stable"}
+      </div>
+      <div class="feedback-box" style="margin-top:12px">${d.system_health||""}</div>
+    `;
+  } catch(e) {
+    document.getElementById("worldmodel-content").innerText = "Error loading world model: " + e.message;
+  }
+}
+
 async function runDebate() {
   const btn = document.getElementById("debate-btn");
   btn.disabled = true;
@@ -790,7 +835,7 @@ loadSample();
 def metadata():
     return {
         "name": "hallucinet-adversarial",
-        "description": "Adversarial self-improving hallucination detection. Generator vs Detector multi-agent RL. Theme 1 + Theme 4.",
+        "description": "Adversarial self-improving hallucination detection. Generator vs Detector multi-agent RL. Theme 1 + Theme 3 + Theme 4.",
         "version": "2.0.0",
         "author": "team-tle"
     }
@@ -888,8 +933,25 @@ def debate_post(body: DebateRequest):
         generator_defense=body.generator_defense,
         ground_truth_phrases=ctx["ground_truth_phrases"],
     )
+    # Feed debate outcome back into oversight
+    try:
+        oversight_agent.record_episode({
+            "episode_id": detector_env._episode_id,
+            "error_type": "debate_round",
+            "detector_confidence": 0.8,
+            "detector_correct": result.get("outcome") == "detector_wins",
+            "generator_confidence": result.get("generator_defense_score", 0.5),
+            "generator_won": result.get("outcome") != "detector_wins",
+            "task_id": detector_env._task_id,
+            "step": "debate",
+            "debate_delta": result.get("generator_final_reward_delta", 0)
+        })
+    except Exception as e:
+        print(f"[DEBATE OVERSIGHT ERROR] {e}")
+
     return {
         "task_id": detector_env._task_id,
+        "episode_id": detector_env._episode_id,
         "debate": result,
         "debate_round": True,
         "debate_stats": debate_coordinator.get_stats(),
@@ -934,6 +996,55 @@ def training_summary():
         },
         "key_finding": "Curriculum escalated from easy to hard across 90 sessions. Expert task correctly demoted — environment working as designed.",
         "elo": elo_tracker.get_standings()
+    }
+
+
+@app.get("/world/model")
+def world_model():
+    eval_data = oversight_agent.evaluate()
+    curriculum_data = adversarial_curriculum.get_status()
+    calibration_data = detector_calibration.get_calibration_curve()
+    elo_data = elo_tracker.get_standings()
+    
+    # Group oversight records by episode_id
+    episodes = {}
+    for rec in oversight_agent.episode_history:
+        eid = rec.get("episode_id", "unknown")
+        if eid not in episodes:
+            episodes[eid] = []
+        episodes[eid].append(rec)
+    
+    return {
+        "theme": "Theme 2: Long-Horizon Planning + Theme 3: World Modeling",
+        "description": "5-step adversarial episodes with persistent state tracking",
+        "multi_step_episodes": {
+            "total_episodes": len(episodes),
+            "steps_per_episode": {
+                eid: len(steps) 
+                for eid, steps in list(episodes.items())[-5:]
+            },
+            "episode_flow": "generator \u2192 detector \u2192 debate \u2192 oversight \u2192 curriculum"
+        },
+        "agent_model": {
+            "detector_reliability": eval_data["reliability_score"],
+            "detector_blind_spots": eval_data["blind_spots"],
+            "overconfidence_rate": eval_data["overconfidence_rate"],
+            "calibration_error": calibration_data["calibration_error"],
+            "calibration_interpretation": calibration_data["interpretation"],
+            "episodes_monitored": eval_data["episodes_monitored"]
+        },
+        "environment_model": {
+            "current_difficulty": curriculum_data.get("current_task"),
+            "detector_elo": elo_data["detector_elo"],
+            "generator_elo": elo_data["generator_elo"],
+            "current_leader": elo_data["current_leader"],
+            "total_rounds": elo_data["total_rounds"]
+        },
+        "predicted_next_action": (
+            "inject_adversarial_sample" if oversight_agent.should_inject_adversarial()
+            else "continue_current_difficulty"
+        ),
+        "system_health": eval_data["system_feedback"]
     }
 
 

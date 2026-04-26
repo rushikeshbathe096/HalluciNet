@@ -67,7 +67,7 @@ class HallucinationEnvironment(Environment[HallucinationAction, HallucinationObs
             reference_document=first["reference_document"],
             llm_response=first["llm_response"],
             feedback="Episode started. Analyse both texts and submit your findings.",
-            score=0.0,
+            score=0.001,
             steps_taken=0,
             max_steps=self._max_steps,
             metadata={
@@ -150,7 +150,7 @@ class HallucinationEnvironment(Environment[HallucinationAction, HallucinationObs
         if done:
             return HallucinationObservation(
                 done=True,
-                reward=round(reward, 4),
+                reward=round(max(0.001, min(0.999, reward)), 4),
                 task_id=self._task_id,
                 sample_index=self._index,
                 total_samples=len(self._samples),
@@ -169,7 +169,7 @@ class HallucinationEnvironment(Environment[HallucinationAction, HallucinationObs
             nxt = self._samples[self._index]
             return HallucinationObservation(
                 done=False,
-                reward=round(reward, 4),
+                reward=round(max(0.001, min(0.999, reward)), 4),
                 task_id=self._task_id,
                 sample_index=self._index,
                 total_samples=len(self._samples),
@@ -215,6 +215,7 @@ class HallucinationEnvironment(Environment[HallucinationAction, HallucinationObs
         ets = [r.get("error_type", "unknown") for r in log]
         err = "mixed" if len(set(ets)) > 1 else ets[0] if ets else "unknown"
         return {
+            "episode_id": self._episode_id,
             "error_type": err,
             "detector_confidence": sum(confs) / max(len(confs), 1),
             "detector_correct": all(r.get("detector_correct") for r in log),
@@ -241,9 +242,9 @@ class HallucinationEnvironment(Environment[HallucinationAction, HallucinationObs
             task_id=self._task_id,
             sample_index=self._index,
             total_samples=len(self._samples),
-            episode_score=round(
+            episode_score=max(0.001, min(0.999, round(
                 sum(self._scores) / len(self._scores), 4
-            ) if self._scores else 0.0,
+            ))) if self._scores else 0.001,
             steps_taken=self._steps,
             step_count=self._steps,
             is_done=self._done
